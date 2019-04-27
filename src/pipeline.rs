@@ -14,6 +14,8 @@ pub struct Pipeline {
     uniform_layout: wgpu::BindGroupLayout,
     uniforms: wgpu::BindGroup,
     instances: wgpu::Buffer,
+    pipeline: wgpu::RenderPipeline,
+    current_instances: u32,
 }
 
 impl Pipeline {
@@ -90,6 +92,85 @@ impl Pipeline {
                 | wgpu::BufferUsageFlags::TRANSFER_DST,
         });
 
+        let layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                bind_group_layouts: &[&uniform_layout],
+            });
+
+        let vs_module =
+            device.create_shader_module(include_bytes!("shader/vertex.spv"));
+        let fs_module =
+            device.create_shader_module(include_bytes!("shader/fragment.spv"));
+
+        let pipeline =
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                layout: &layout,
+                vertex_stage: wgpu::PipelineStageDescriptor {
+                    module: &vs_module,
+                    entry_point: "main",
+                },
+                fragment_stage: wgpu::PipelineStageDescriptor {
+                    module: &fs_module,
+                    entry_point: "main",
+                },
+                rasterization_state: wgpu::RasterizationStateDescriptor {
+                    front_face: wgpu::FrontFace::Cw,
+                    cull_mode: wgpu::CullMode::None,
+                    depth_bias: 0,
+                    depth_bias_slope_scale: 0.0,
+                    depth_bias_clamp: 0.0,
+                },
+                primitive_topology: wgpu::PrimitiveTopology::TriangleStrip,
+                color_states: &[wgpu::ColorStateDescriptor {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    color: wgpu::BlendDescriptor {
+                        src_factor: wgpu::BlendFactor::SrcAlpha,
+                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                    alpha: wgpu::BlendDescriptor {
+                        src_factor: wgpu::BlendFactor::One,
+                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                    write_mask: wgpu::ColorWriteFlags::ALL,
+                }],
+                depth_stencil_state: None,
+                index_format: wgpu::IndexFormat::Uint16,
+                vertex_buffers: &[wgpu::VertexBufferDescriptor {
+                    stride: mem::size_of::<Instance>() as u32,
+                    step_mode: wgpu::InputStepMode::Instance,
+                    attributes: &[
+                        wgpu::VertexAttributeDescriptor {
+                            attribute_index: 0,
+                            format: wgpu::VertexFormat::Float3,
+                            offset: 0,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            attribute_index: 1,
+                            format: wgpu::VertexFormat::Float2,
+                            offset: 4 * 3,
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            attribute_index: 2,
+                            format: wgpu::VertexFormat::Float2,
+                            offset: 4 * (3 + 2),
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            attribute_index: 3,
+                            format: wgpu::VertexFormat::Float2,
+                            offset: 4 * (3 + 2 + 2),
+                        },
+                        wgpu::VertexAttributeDescriptor {
+                            attribute_index: 4,
+                            format: wgpu::VertexFormat::Float4,
+                            offset: 4 * (3 + 2 + 2 + 2),
+                        },
+                    ],
+                }],
+                sample_count: 1,
+            });
+
         Pipeline {
             transform,
             sampler,
@@ -97,6 +178,8 @@ impl Pipeline {
             uniform_layout,
             uniforms,
             instances,
+            pipeline,
+            current_instances: 0,
         }
     }
 
@@ -127,10 +210,69 @@ impl Pipeline {
         encoder: &mut wgpu::CommandEncoder,
         transform: [f32; 16],
         instances: &[Instance],
+        target: &wgpu::TextureView,
     ) {
+        let transform_buffer = device
+            .create_buffer_mapped(16, wgpu::BufferUsageFlags::TRANSFER_SRC)
+            .fill_from_slice(&transform[..]);
+
+        encoder.copy_buffer_to_buffer(
+            &transform_buffer,
+            0,
+            &self.transform,
+            0,
+            16 * 4,
+        );
+
+        let instance_buffer = device
+            .create_buffer_mapped(
+                instances.len(),
+                wgpu::BufferUsageFlags::TRANSFER_SRC,
+            )
+            .fill_from_slice(instances);
+
+        encoder.copy_buffer_to_buffer(
+            &instance_buffer,
+            0,
+            &self.instances,
+            0,
+            (mem::size_of::<Instance>() * instances.len()) as u32,
+        );
+
+        self.current_instances = instances.len() as u32;
+
+        self.redraw(encoder, target);
     }
 
-    pub fn redraw(&self, encoder: &mut wgpu::CommandEncoder) {}
+    pub fn redraw(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+    ) {
+        let mut render_pass =
+            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[
+                    wgpu::RenderPassColorAttachmentDescriptor {
+                        attachment: target,
+                        load_op: wgpu::LoadOp::Load,
+                        store_op: wgpu::StoreOp::Store,
+                        clear_color: wgpu::Color {
+                            r: 0.0,
+                            g: 0.0,
+                            b: 0.0,
+                            a: 0.0,
+                        },
+                    },
+                ],
+                depth_stencil_attachment: None,
+            });
+
+        render_pass.set_pipeline(&self.pipeline);
+        render_pass.set_bind_group(0, &self.uniforms);
+        render_pass.set_vertex_buffers(&[(&self.instances, 0)]);
+
+        render_pass.draw(0..4, 0..self.current_instances as u32);
+    }
 
     // Helpers
     fn create_uniforms(
@@ -163,7 +305,7 @@ impl Pipeline {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Instance {
     left_top: [f32; 3],
     right_bottom: [f32; 2],

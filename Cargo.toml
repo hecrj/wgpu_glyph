@@ -15,3 +15,6 @@ metal = ["wgpu/metal"]
 wgpu = "0.2"
 glyph_brush = "0.4"
 log = "0.4"
+
+[dev-dependencies]
+env_logger = "0.6"

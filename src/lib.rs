@@ -4,7 +4,10 @@ mod pipeline;
 use pipeline::{Instance, Pipeline};
 
 pub use builder::GlyphBrushBuilder;
-pub use glyph_brush::{BrushAction, BrushError, Section, VariedSection};
+pub use glyph_brush::{
+    rusttype, BrushAction, BrushError, Section, VariedSection,
+};
+pub use rusttype::Scale;
 
 use core::hash::BuildHasher;
 use std::borrow::Cow;
@@ -161,10 +164,11 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
 
         match brush_action.unwrap() {
             BrushAction::Draw(verts) => {
-                self.pipeline.draw(device, encoder, transform, &verts);
+                self.pipeline
+                    .draw(device, encoder, transform, &verts, target);
             }
             BrushAction::ReDraw => {
-                self.pipeline.redraw(encoder);
+                self.pipeline.redraw(encoder, target);
             }
         };
 

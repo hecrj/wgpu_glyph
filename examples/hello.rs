@@ -1,7 +1,9 @@
 use wgpu::winit;
-use wgpu_glyph::{GlyphBrushBuilder, Section};
+use wgpu_glyph::{GlyphBrushBuilder, Scale, Section};
 
 fn main() -> Result<(), String> {
+    env_logger::init();
+
     // Initialize GPU
     let instance = wgpu::Instance::new();
 
@@ -24,7 +26,7 @@ fn main() -> Result<(), String> {
     let surface = instance.create_surface(&window);
 
     // Prepare swap chain
-    let size = window
+    let mut size = window
         .get_inner_size()
         .unwrap()
         .to_physical(window.get_hidpi_factor());
@@ -53,6 +55,23 @@ fn main() -> Result<(), String> {
                 event: winit::WindowEvent::CloseRequested,
                 ..
             } => running = false,
+
+            winit::Event::WindowEvent {
+                event: winit::WindowEvent::Resized(new_size),
+                ..
+            } => {
+                size = new_size.to_physical(window.get_hidpi_factor());
+
+                swap_chain = device.create_swap_chain(
+                    &surface,
+                    &wgpu::SwapChainDescriptor {
+                        usage: wgpu::TextureUsageFlags::OUTPUT_ATTACHMENT,
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        width: size.width.round() as u32,
+                        height: size.height.round() as u32,
+                    },
+                );
+            }
             _ => {}
         });
 
@@ -88,6 +107,16 @@ fn main() -> Result<(), String> {
         // Queue the text
         glyph_brush.queue(Section {
             text: "Hello wgpu_glyph",
+            color: [1.0, 1.0, 1.0, 1.0],
+            ..Section::default()
+        });
+
+        glyph_brush.queue(Section {
+            text: "Hello wgpu_glyph",
+            screen_position: (30.0, 30.0),
+            color: [1.0, 0.0, 0.0, 1.0],
+            scale: Scale { x: 30.0, y: 30.0 },
+            bounds: (size.width as f32, size.height as f32),
             ..Section::default()
         });
 
@@ -99,6 +128,8 @@ fn main() -> Result<(), String> {
             size.width.round() as u32,
             size.height.round() as u32,
         )?;
+
+        device.get_queue().submit(&[encoder.finish()]);
     }
 
     Ok(())
