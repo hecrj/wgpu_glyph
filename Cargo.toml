@@ -1,0 +1,17 @@
+[package]
+name = "wgpu_glyph"
+version = "0.1.0"
+authors = ["Héctor Ramón Jiménez <hector0193@gmail.com>"]
+edition = "2018"
+
+[features]
+default = []
+vulkan = ["wgpu/vulkan"]
+dx11 = ["wgpu/dx11"]
+dx12 = ["wgpu/dx12"]
+metal = ["wgpu/metal"]
+
+[dependencies]
+wgpu = "0.2"
+glyph_brush = "0.4"
+log = "0.4"
