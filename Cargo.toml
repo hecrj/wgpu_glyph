@@ -3,13 +3,11 @@ name = "wgpu_glyph"
 version = "0.1.0"
 authors = ["Héctor Ramón Jiménez <hector0193@gmail.com>"]
 edition = "2018"
-
-[features]
-default = []
-vulkan = ["wgpu/vulkan"]
-dx11 = ["wgpu/dx11"]
-dx12 = ["wgpu/dx12"]
-metal = ["wgpu/metal"]
+license = "MIT"
+keywords = ["font", "ttf", "truetype", "wgpu", "text"]
+repository = "https://github.com/hecrj/wgpu_glyph"
+documentation = "https://docs.rs/wgpu_glyph"
+readme = "README.md"
 
 [dependencies]
 wgpu = "0.2"

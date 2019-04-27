@@ -1,3 +1,7 @@
+//! A fast text renderer for [`wgpu`]. Powered by [`glyph_brush`].
+//!
+//! [`wgpu`]: https://github.com/gfx-rs/wgpu
+//! [`glyph_brush`]: https://github.com/alexheretic/glyph-brush/tree/master/glyph-brush
 mod builder;
 mod pipeline;
 
@@ -5,33 +9,23 @@ use pipeline::{Instance, Pipeline};
 
 pub use builder::GlyphBrushBuilder;
 pub use glyph_brush::{
-    rusttype, BrushAction, BrushError, Section, VariedSection,
+    rusttype::{self, Font, Point, PositionedGlyph, Rect, Scale, SharedBytes},
+    BuiltInLineBreaker, FontId, FontMap, GlyphCruncher, GlyphPositioner,
+    HorizontalAlign, Layout, LineBreak, LineBreaker, OwnedSectionText,
+    OwnedVariedSection, PositionedGlyphIter, Section, SectionGeometry,
+    SectionText, VariedSection, VerticalAlign,
 };
-pub use rusttype::Scale;
 
 use core::hash::BuildHasher;
 use std::borrow::Cow;
 
-use glyph_brush::DefaultSectionHasher;
+use glyph_brush::{BrushAction, BrushError, Color, DefaultSectionHasher};
 use log::{log_enabled, warn};
 
 /// Object allowing glyph drawing, containing cache state. Manages glyph positioning cacheing,
 /// glyph draw caching & efficient GPU texture cache updating and re-sizing on demand.
 ///
 /// Build using a [`GlyphBrushBuilder`](struct.GlyphBrushBuilder.html).
-///
-/// # Caching behaviour
-///
-/// Calls to [`GlyphBrush::queue`](#method.queue),
-/// [`GlyphBrush::pixel_bounds`](#method.pixel_bounds), [`GlyphBrush::glyphs`](#method.glyphs)
-/// calculate the positioned glyphs for a section.
-/// This is cached so future calls to any of the methods for the same section are much
-/// cheaper. In the case of [`GlyphBrush::queue`](#method.queue) the calculations will also be
-/// used for actual drawing.
-///
-/// The cache for a section will be **cleared** after a
-/// [`GlyphBrush::draw_queued`](#method.draw_queued) call when that section has not been used since
-/// the previous draw call.
 pub struct GlyphBrush<'font, H = DefaultSectionHasher> {
     pipeline: Pipeline,
     glyph_brush: glyph_brush::GlyphBrush<'font, Instance, H>,
@@ -54,9 +48,9 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         }
     }
 
-    /// Queues a section/layout to be drawn by the next call of
-    /// [`draw_queued`](struct.GlyphBrush.html#method.draw_queued). Can be called multiple times
-    /// to queue multiple sections for drawing.
+    // Queues a section/layout to be drawn by the next call of
+    /// [`draw_queued`](struct.GlyphBrush.html#method.draw_queued). Can be
+    /// called multiple times to queue multiple sections for drawing.
     ///
     /// Benefits from caching, see [caching behaviour](#caching-behaviour).
     #[inline]
@@ -67,14 +61,77 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         self.glyph_brush.queue(section)
     }
 
+    /// Queues a section/layout to be drawn by the next call of
+    /// [`draw_queued`](struct.GlyphBrush.html#method.draw_queued). Can be
+    /// called multiple times to queue multiple sections for drawing.
+    ///
+    /// Used to provide custom `GlyphPositioner` logic, if using built-in
+    /// [`Layout`](enum.Layout.html) simply use
+    /// [`queue`](struct.GlyphBrush.html#method.queue)
+    ///
+    /// Benefits from caching, see [caching behaviour](#caching-behaviour).
+    #[inline]
+    pub fn queue_custom_layout<'a, S, G>(
+        &mut self,
+        section: S,
+        custom_layout: &G,
+    ) where
+        G: GlyphPositioner,
+        S: Into<Cow<'a, VariedSection<'a>>>,
+    {
+        self.glyph_brush.queue_custom_layout(section, custom_layout)
+    }
+
+    /// Queues pre-positioned glyphs to be processed by the next call of
+    /// [`draw_queued`](struct.GlyphBrush.html#method.draw_queued). Can be
+    /// called multiple times.
+    #[inline]
+    pub fn queue_pre_positioned(
+        &mut self,
+        glyphs: Vec<(PositionedGlyph<'font>, Color, FontId)>,
+        bounds: Rect<f32>,
+        z: f32,
+    ) {
+        self.glyph_brush.queue_pre_positioned(glyphs, bounds, z)
+    }
+
+    /// Retains the section in the cache as if it had been used in the last
+    /// draw-frame.
+    ///
+    /// Should not be necessary unless using multiple draws per frame with
+    /// distinct transforms, see [caching behaviour](#caching-behaviour).
+    #[inline]
+    pub fn keep_cached_custom_layout<'a, S, G>(
+        &mut self,
+        section: S,
+        custom_layout: &G,
+    ) where
+        S: Into<Cow<'a, VariedSection<'a>>>,
+        G: GlyphPositioner,
+    {
+        self.glyph_brush
+            .keep_cached_custom_layout(section, custom_layout)
+    }
+
+    /// Retains the section in the cache as if it had been used in the last
+    /// draw-frame.
+    ///
+    /// Should not be necessary unless using multiple draws per frame with
+    /// distinct transforms, see [caching behaviour](#caching-behaviour).
+    #[inline]
+    pub fn keep_cached<'a, S>(&mut self, section: S)
+    where
+        S: Into<Cow<'a, VariedSection<'a>>>,
+    {
+        self.glyph_brush.keep_cached(section)
+    }
+
     /// Draws all queued sections onto a render target.
     /// See [`queue`](struct.GlyphBrush.html#method.queue).
     ///
-    /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    /// It __does not__ submit the encoder command buffer to the device queue.
     ///
-    /// # Raw usage
-    /// Can also be used with gfx raw render & depth views if necessary. The `Format` must also
-    /// be provided. [See example.](struct.GlyphBrush.html#raw-usage-1)
+    /// Trims the cache, see [caching behaviour](#caching-behaviour).
     #[inline]
     pub fn draw_queued(
         &mut self,
@@ -94,12 +151,13 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         )
     }
 
-    /// Draws all queued sections onto a render target, applying a position transform (e.g.
-    /// a projection).
+    /// Draws all queued sections onto a render target, applying a position
+    /// transform (e.g.  a projection).
     /// See [`queue`](struct.GlyphBrush.html#method.queue).
     ///
-    /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    /// It __does not__ submit the encoder command buffer to the device queue.
     ///
+    /// Trims the cache, see [caching behaviour](#caching-behaviour).
     pub fn draw_queued_with_transform(
         &mut self,
         transform: [f32; 16],
@@ -173,5 +231,55 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         };
 
         Ok(())
+    }
+
+    /// Returns the available fonts.
+    ///
+    /// The `FontId` corresponds to the index of the font data.
+    #[inline]
+    pub fn fonts(&self) -> &[Font<'_>] {
+        self.glyph_brush.fonts()
+    }
+}
+
+impl<'font, H: BuildHasher> GlyphCruncher<'font> for GlyphBrush<'font, H> {
+    #[inline]
+    fn pixel_bounds_custom_layout<'a, S, L>(
+        &mut self,
+        section: S,
+        custom_layout: &L,
+    ) -> Option<Rect<i32>>
+    where
+        L: GlyphPositioner + std::hash::Hash,
+        S: Into<Cow<'a, VariedSection<'a>>>,
+    {
+        self.glyph_brush
+            .pixel_bounds_custom_layout(section, custom_layout)
+    }
+
+    #[inline]
+    fn glyphs_custom_layout<'a, 'b, S, L>(
+        &'b mut self,
+        section: S,
+        custom_layout: &L,
+    ) -> PositionedGlyphIter<'b, 'font>
+    where
+        L: GlyphPositioner + std::hash::Hash,
+        S: Into<Cow<'a, VariedSection<'a>>>,
+    {
+        self.glyph_brush
+            .glyphs_custom_layout(section, custom_layout)
+    }
+
+    #[inline]
+    fn fonts(&self) -> &[Font<'font>] {
+        self.glyph_brush.fonts()
+    }
+}
+
+impl<H> std::fmt::Debug for GlyphBrush<'_, H> {
+    #[inline]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "GlyphBrush")
     }
 }

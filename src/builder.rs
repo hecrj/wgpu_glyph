@@ -62,10 +62,11 @@ impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, H> {
         self
     }
 
-    /// Sets the section hasher. `GlyphBrush` cannot handle absolute section hash collisions
-    /// so use a good hash algorithm.
+    /// Sets the section hasher. `GlyphBrush` cannot handle absolute section
+    /// hash collisions so use a good hash algorithm.
     ///
-    /// This hasher is used to distinguish sections, rather than for hashmap internal use.
+    /// This hasher is used to distinguish sections, rather than for hashmap
+    /// internal use.
     ///
     /// Defaults to [seahash](https://docs.rs/seahash).
     pub fn section_hasher<T: BuildHasher>(
@@ -78,7 +79,7 @@ impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, H> {
         }
     }
 
-    /// Builds a `GlyphBrush` using the input gfx factory
+    /// Builds a `GlyphBrush` using the given `wgpu::Device`
     pub fn build(self, device: &mut wgpu::Device) -> GlyphBrush<'a, H> {
         GlyphBrush::new(device, self.texture_filter_method, self.inner)
     }
