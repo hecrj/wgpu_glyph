@@ -4,8 +4,8 @@
 [![Documentation](https://docs.rs/wgpu_glyph/badge.svg)](https://docs.rs/wgpu_glyph)
 [![License](https://img.shields.io/crates/l/wgpu_glyph.svg)](https://github.com/hecrj/wgpu_glyph/blob/master/LICENSE)
 
-A fast text render for [wgpu](https://github.com/gfx-rs/wgpu). Powered by
-[glyph-brush](https://github.com/alexheretic/glyph-brush/tree/master/glyph-brush).
+A fast text render for [wgpu](https://github.com/gfx-rs/wgpu), powered by
+[glyph-brush](https://github.com/alexheretic/glyph-brush/tree/master/glyph-brush)
 
 ```rust
 use gfx_glyph::{Section, GlyphBrushBuilder};

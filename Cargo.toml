@@ -3,6 +3,7 @@ name = "wgpu_glyph"
 version = "0.1.0"
 authors = ["Héctor Ramón Jiménez <hector0193@gmail.com>"]
 edition = "2018"
+description = "A fast text renderer for wgpu, powered by glyph_brush"
 license = "MIT"
 keywords = ["font", "ttf", "truetype", "wgpu", "text"]
 repository = "https://github.com/hecrj/wgpu_glyph"
