@@ -222,11 +222,11 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
 
         match brush_action.unwrap() {
             BrushAction::Draw(verts) => {
-                self.pipeline
-                    .draw(device, encoder, transform, &verts, target);
+                self.pipeline.upload(device, encoder, transform, &verts);
+                self.pipeline.draw(encoder, target);
             }
             BrushAction::ReDraw => {
-                self.pipeline.redraw(encoder, target);
+                self.pipeline.draw(encoder, target);
             }
         };
 

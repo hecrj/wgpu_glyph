@@ -13,9 +13,10 @@ pub struct Pipeline {
     cache: Rc<Cache>,
     uniform_layout: wgpu::BindGroupLayout,
     uniforms: wgpu::BindGroup,
-    instances: wgpu::Buffer,
     pipeline: wgpu::RenderPipeline,
-    current_instances: u32,
+    instances: wgpu::Buffer,
+    current_instances: usize,
+    supported_instances: usize,
 }
 
 impl Pipeline {
@@ -87,7 +88,8 @@ impl Pipeline {
         );
 
         let instances = device.create_buffer(&wgpu::BufferDescriptor {
-            size: mem::size_of::<Instance>() as u32 * Instance::MAX as u32,
+            size: mem::size_of::<Instance>() as u32
+                * Instance::INITIAL_AMOUNT as u32,
             usage: wgpu::BufferUsageFlags::VERTEX
                 | wgpu::BufferUsageFlags::TRANSFER_DST,
         });
@@ -177,9 +179,10 @@ impl Pipeline {
             cache: Rc::new(cache),
             uniform_layout,
             uniforms,
-            instances,
             pipeline,
+            instances,
             current_instances: 0,
+            supported_instances: Instance::INITIAL_AMOUNT,
         }
     }
 
@@ -204,13 +207,12 @@ impl Pipeline {
         );
     }
 
-    pub fn draw(
+    pub fn upload(
         &mut self,
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         transform: [f32; 16],
         instances: &[Instance],
-        target: &wgpu::TextureView,
     ) {
         let transform_buffer = device
             .create_buffer_mapped(16, wgpu::BufferUsageFlags::TRANSFER_SRC)
@@ -223,6 +225,17 @@ impl Pipeline {
             0,
             16 * 4,
         );
+
+        if instances.len() > self.supported_instances {
+            self.instances = device.create_buffer(&wgpu::BufferDescriptor {
+                size: mem::size_of::<Instance>() as u32
+                    * instances.len() as u32,
+                usage: wgpu::BufferUsageFlags::VERTEX
+                    | wgpu::BufferUsageFlags::TRANSFER_DST,
+            });
+
+            self.supported_instances = instances.len();
+        }
 
         let instance_buffer = device
             .create_buffer_mapped(
@@ -239,12 +252,10 @@ impl Pipeline {
             (mem::size_of::<Instance>() * instances.len()) as u32,
         );
 
-        self.current_instances = instances.len() as u32;
-
-        self.redraw(encoder, target);
+        self.current_instances = instances.len();
     }
 
-    pub fn redraw(
+    pub fn draw(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
@@ -315,7 +326,7 @@ pub struct Instance {
 }
 
 impl Instance {
-    const MAX: usize = 50_000;
+    const INITIAL_AMOUNT: usize = 50_000;
 }
 
 impl From<glyph_brush::GlyphVertex> for Instance {
