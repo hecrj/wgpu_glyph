@@ -67,7 +67,7 @@ fn main() -> Result<(), String> {
                     &surface,
                     &wgpu::SwapChainDescriptor {
                         usage: wgpu::TextureUsageFlags::OUTPUT_ATTACHMENT,
-                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                        format: render_format,
                         width: size.width.round() as u32,
                         height: size.height.round() as u32,
                     },

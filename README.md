@@ -36,6 +36,8 @@ device.get_queue().submit(&[encoder.finish()]);
 ## Examples
 
 Have a look at
-* `cargo run --example hello --features wgpu/vulkan --release`
+  * `cargo run --example hello --features wgpu/vulkan --release`
+  * [Coffee](https://github.com/hecrj/coffee), which uses `wgpu_glyph` to
+    provide font rendering on the [`wgpu` graphics backend].
 
-Also, `wgpu_glyph` is being used in [Coffee](https://github.com/hecrj/coffee).
+[`wgpu` graphics backend]: https://github.com/hecrj/coffee/tree/master/src/graphics/backend_wgpu
