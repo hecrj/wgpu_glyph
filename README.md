@@ -12,7 +12,7 @@ use gfx_glyph::{Section, GlyphBrushBuilder};
 
 let font: &[u8] = include_bytes!("SomeFont.ttf");
 let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(font)
-    .build(&mut device);
+    .build(&mut device, render_format);
 
 let section = Section {
     text: "Hello wgpu_glyph",
