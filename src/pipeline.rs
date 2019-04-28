@@ -31,6 +31,7 @@ impl Pipeline {
     pub fn new(
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
+        render_format: wgpu::TextureFormat,
         cache_width: u32,
         cache_height: u32,
     ) -> Pipeline {
@@ -49,8 +50,8 @@ impl Pipeline {
             mag_filter: filter_mode,
             min_filter: filter_mode,
             mipmap_filter: filter_mode,
-            lod_min_clamp: -100.0,
-            lod_max_clamp: 100.0,
+            lod_min_clamp: 0.0,
+            lod_max_clamp: 0.0,
             max_anisotropy: 0,
             compare_function: wgpu::CompareFunction::Always,
             border_color: wgpu::BorderColor::TransparentBlack,
@@ -116,15 +117,15 @@ impl Pipeline {
                     entry_point: "main",
                 },
                 rasterization_state: wgpu::RasterizationStateDescriptor {
-                    front_face: wgpu::FrontFace::Cw,
-                    cull_mode: wgpu::CullMode::None,
+                    front_face: wgpu::FrontFace::Ccw,
+                    cull_mode: wgpu::CullMode::Back,
                     depth_bias: 0,
                     depth_bias_slope_scale: 0.0,
                     depth_bias_clamp: 0.0,
                 },
                 primitive_topology: wgpu::PrimitiveTopology::TriangleStrip,
                 color_states: &[wgpu::ColorStateDescriptor {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    format: render_format,
                     color: wgpu::BlendDescriptor {
                         src_factor: wgpu::BlendFactor::SrcAlpha,
                         dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,

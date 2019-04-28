@@ -79,8 +79,18 @@ impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, H> {
         }
     }
 
-    /// Builds a `GlyphBrush` using the given `wgpu::Device`
-    pub fn build(self, device: &mut wgpu::Device) -> GlyphBrush<'a, H> {
-        GlyphBrush::new(device, self.texture_filter_method, self.inner)
+    /// Builds a `GlyphBrush` using the given `wgpu::Device` that can render
+    /// text for texture views with the given `render_format`.
+    pub fn build(
+        self,
+        device: &mut wgpu::Device,
+        render_format: wgpu::TextureFormat,
+    ) -> GlyphBrush<'a, H> {
+        GlyphBrush::new(
+            device,
+            self.texture_filter_method,
+            render_format,
+            self.inner,
+        )
     }
 }

@@ -34,13 +34,19 @@ pub struct GlyphBrush<'font, H = DefaultSectionHasher> {
 impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
     fn new(
         device: &mut wgpu::Device,
-        filter_method: wgpu::FilterMode,
+        filter_mode: wgpu::FilterMode,
+        render_format: wgpu::TextureFormat,
         raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
     ) -> Self {
         let (cache_width, cache_height) = raw_builder.initial_cache_size;
 
-        let pipeline =
-            Pipeline::new(device, filter_method, cache_width, cache_height);
+        let pipeline = Pipeline::new(
+            device,
+            filter_mode,
+            render_format,
+            cache_width,
+            cache_height,
+        );
 
         GlyphBrush {
             pipeline: pipeline,
@@ -132,6 +138,10 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
     /// It __does not__ submit the encoder command buffer to the device queue.
     ///
     /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Panics
+    /// Panics if the provided `target` has a texture format that does not match
+    /// the `render_format` provided on creation of the `GlyphBrush`.
     #[inline]
     pub fn draw_queued(
         &mut self,
@@ -158,6 +168,10 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
     /// It __does not__ submit the encoder command buffer to the device queue.
     ///
     /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Panics
+    /// Panics if the provided `target` has a texture format that does not match
+    /// the `render_format` provided on creation of the `GlyphBrush`.
     pub fn draw_queued_with_transform(
         &mut self,
         transform: [f32; 16],

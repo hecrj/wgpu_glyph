@@ -26,6 +26,7 @@ fn main() -> Result<(), String> {
     let surface = instance.create_surface(&window);
 
     // Prepare swap chain
+    let render_format = wgpu::TextureFormat::Bgra8UnormSrgb;
     let mut size = window
         .get_inner_size()
         .unwrap()
@@ -34,7 +35,7 @@ fn main() -> Result<(), String> {
         &surface,
         &wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsageFlags::OUTPUT_ATTACHMENT,
-            format: wgpu::TextureFormat::Bgra8Unorm,
+            format: render_format,
             width: size.width.round() as u32,
             height: size.height.round() as u32,
         },
@@ -42,8 +43,8 @@ fn main() -> Result<(), String> {
 
     // Prepare glyph_brush
     let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
-    let mut glyph_brush =
-        GlyphBrushBuilder::using_font_bytes(inconsolata).build(&mut device);
+    let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(inconsolata)
+        .build(&mut device, render_format);
 
     // Render loop
     let mut running = true;
@@ -66,7 +67,7 @@ fn main() -> Result<(), String> {
                     &surface,
                     &wgpu::SwapChainDescriptor {
                         usage: wgpu::TextureUsageFlags::OUTPUT_ATTACHMENT,
-                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
                         width: size.width.round() as u32,
                         height: size.height.round() as u32,
                     },
@@ -93,9 +94,9 @@ fn main() -> Result<(), String> {
                         load_op: wgpu::LoadOp::Clear,
                         store_op: wgpu::StoreOp::Store,
                         clear_color: wgpu::Color {
-                            r: 0.0,
-                            g: 0.0,
-                            b: 0.0,
+                            r: 0.4,
+                            g: 0.4,
+                            b: 0.4,
                             a: 1.0,
                         },
                     },
@@ -105,17 +106,26 @@ fn main() -> Result<(), String> {
         }
 
         // Queue the text
+        // glyph_brush.queue(Section {
+        //     text: "Hello wgpu_glyph",
+        //     color: [1.0, 1.0, 1.0, 1.0],
+        //     ..Section::default()
+        // });
+
         glyph_brush.queue(Section {
-            text: "Hello wgpu_glyph",
-            color: [1.0, 1.0, 1.0, 1.0],
+            text: "Hello wgpu_glyph!",
+            screen_position: (30.0, 30.0),
+            color: [0.0, 0.0, 0.0, 1.0],
+            scale: Scale { x: 40.0, y: 40.0 },
+            bounds: (size.width as f32, size.height as f32),
             ..Section::default()
         });
 
         glyph_brush.queue(Section {
-            text: "Hello wgpu_glyph",
-            screen_position: (30.0, 30.0),
-            color: [1.0, 0.0, 0.0, 1.0],
-            scale: Scale { x: 30.0, y: 30.0 },
+            text: "Hello wgpu_glyph!",
+            screen_position: (30.0, 90.0),
+            color: [1.0, 1.0, 1.0, 1.0],
+            scale: Scale { x: 40.0, y: 40.0 },
             bounds: (size.width as f32, size.height as f32),
             ..Section::default()
         });
