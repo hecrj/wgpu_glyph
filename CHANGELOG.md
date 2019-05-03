@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - 2019-04-28
+## [0.3.0] - 2019-05-03
 ### Added
 - This changelog.
 
@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [glyph_brush/pull/64]: https://github.com/alexheretic/glyph-brush/pull/64
 
 
-## [0.2.1] - 2019-04-28
+## [0.2.0] - 2019-04-28
 ### Added
 - Configurable render target format.
 
