@@ -105,13 +105,6 @@ fn main() -> Result<(), String> {
             });
         }
 
-        // Queue the text
-        // glyph_brush.queue(Section {
-        //     text: "Hello wgpu_glyph",
-        //     color: [1.0, 1.0, 1.0, 1.0],
-        //     ..Section::default()
-        // });
-
         glyph_brush.queue(Section {
             text: "Hello wgpu_glyph!",
             screen_position: (30.0, 30.0),

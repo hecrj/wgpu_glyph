@@ -151,18 +151,20 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         target_width: u32,
         target_height: u32,
     ) -> Result<(), String> {
-        self.draw_queued_with_transform(
-            Pipeline::IDENTITY_MATRIX,
-            device,
-            encoder,
-            target,
-            target_width,
-            target_height,
-        )
+        #[cfg_attr(rustfmt, rustfmt_skip)]
+        let projection =
+            [
+                2.0 / target_width as f32, 0.0, 0.0, 0.0,
+                0.0, 2.0 / target_height as f32, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                -1.0, -1.0, 0.0, 1.0,
+            ];
+
+        self.draw_queued_with_transform(projection, device, encoder, target)
     }
 
     /// Draws all queued sections onto a render target, applying a position
-    /// transform (e.g.  a projection).
+    /// transform (e.g. a projection).
     /// See [`queue`](struct.GlyphBrush.html#method.queue).
     ///
     /// It __does not__ submit the encoder command buffer to the device queue.
@@ -178,8 +180,6 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         device: &mut wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        target_width: u32,
-        target_height: u32,
     ) -> Result<(), String> {
         let cache = self.pipeline.cache();
 
@@ -187,7 +187,6 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
 
         loop {
             brush_action = self.glyph_brush.process_queued(
-                (target_width, target_height),
                 |rect, tex_data| {
                     let offset = [rect.min.x as u16, rect.min.y as u16];
                     let size = [rect.width() as u16, rect.height() as u16];
@@ -236,11 +235,11 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
 
         match brush_action.unwrap() {
             BrushAction::Draw(verts) => {
-                self.pipeline.upload(device, encoder, transform, &verts);
-                self.pipeline.draw(encoder, target);
+                self.pipeline.upload(device, encoder, &verts);
+                self.pipeline.draw(device, encoder, target, transform);
             }
             BrushAction::ReDraw => {
-                self.pipeline.draw(encoder, target);
+                self.pipeline.draw(device, encoder, target, transform);
             }
         };
 

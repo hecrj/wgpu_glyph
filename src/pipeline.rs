@@ -17,6 +17,7 @@ pub struct Pipeline {
     instances: wgpu::Buffer,
     current_instances: usize,
     supported_instances: usize,
+    current_transform: [f32; 16],
 }
 
 impl Pipeline {
@@ -184,6 +185,7 @@ impl Pipeline {
             instances,
             current_instances: 0,
             supported_instances: Instance::INITIAL_AMOUNT,
+            current_transform: [0.0; 16],
         }
     }
 
@@ -212,21 +214,8 @@ impl Pipeline {
         &mut self,
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
-        transform: [f32; 16],
         instances: &[Instance],
     ) {
-        let transform_buffer = device
-            .create_buffer_mapped(16, wgpu::BufferUsageFlags::TRANSFER_SRC)
-            .fill_from_slice(&transform[..]);
-
-        encoder.copy_buffer_to_buffer(
-            &transform_buffer,
-            0,
-            &self.transform,
-            0,
-            16 * 4,
-        );
-
         if instances.len() > self.supported_instances {
             self.instances = device.create_buffer(&wgpu::BufferDescriptor {
                 size: mem::size_of::<Instance>() as u32
@@ -257,10 +246,28 @@ impl Pipeline {
     }
 
     pub fn draw(
-        &self,
+        &mut self,
+        device: &mut wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        transform: [f32; 16],
     ) {
+        if transform != self.current_transform {
+            let transform_buffer = device
+                .create_buffer_mapped(16, wgpu::BufferUsageFlags::TRANSFER_SRC)
+                .fill_from_slice(&transform[..]);
+
+            encoder.copy_buffer_to_buffer(
+                &transform_buffer,
+                0,
+                &self.transform,
+                0,
+                16 * 4,
+            );
+
+            self.current_transform = transform;
+        }
+
         let mut render_pass =
             encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[
@@ -337,31 +344,15 @@ impl From<glyph_brush::GlyphVertex> for Instance {
             mut tex_coords,
             pixel_coords,
             bounds,
-            screen_dimensions: (screen_w, screen_h),
             color,
             z,
         } = vertex;
 
-        let gl_bounds = Rect {
-            min: point(
-                2.0 * (bounds.min.x / screen_w - 0.5),
-                2.0 * (bounds.min.y / screen_h - 0.5),
-            ),
-            max: point(
-                2.0 * (bounds.max.x / screen_w - 0.5),
-                2.0 * (bounds.max.y / screen_h - 0.5),
-            ),
-        };
+        let gl_bounds = bounds;
 
         let mut gl_rect = Rect {
-            min: point(
-                2.0 * (pixel_coords.min.x as f32 / screen_w - 0.5),
-                2.0 * (pixel_coords.min.y as f32 / screen_h - 0.5),
-            ),
-            max: point(
-                2.0 * (pixel_coords.max.x as f32 / screen_w - 0.5),
-                2.0 * (pixel_coords.max.y as f32 / screen_h - 0.5),
-            ),
+            min: point(pixel_coords.min.x as f32, pixel_coords.min.y as f32),
+            max: point(pixel_coords.max.x as f32, pixel_coords.max.y as f32),
         };
 
         // handle overlapping bounds, modify uv_rect to preserve texture aspect
