@@ -12,7 +12,7 @@ readme = "README.md"
 
 [dependencies]
 wgpu = "0.2"
-glyph_brush = { version = "0.5" }
+glyph_brush = "0.5"
 log = "0.4"
 
 [dev-dependencies]
