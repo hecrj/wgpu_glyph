@@ -216,6 +216,10 @@ impl Pipeline {
         encoder: &mut wgpu::CommandEncoder,
         instances: &[Instance],
     ) {
+        if instances.is_empty() {
+            return;
+        }
+
         if instances.len() > self.supported_instances {
             self.instances = device.create_buffer(&wgpu::BufferDescriptor {
                 size: mem::size_of::<Instance>() as u32
