@@ -217,6 +217,7 @@ impl Pipeline {
         instances: &[Instance],
     ) {
         if instances.is_empty() {
+            self.current_instances = 0;
             return;
         }
 
