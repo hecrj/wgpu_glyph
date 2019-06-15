@@ -11,10 +11,11 @@ fn main() -> Result<(), String> {
         power_preference: wgpu::PowerPreference::HighPerformance,
     });
 
-    let mut device = adapter.create_device(&wgpu::DeviceDescriptor {
+    let mut device = adapter.request_device(&wgpu::DeviceDescriptor {
         extensions: wgpu::Extensions {
             anisotropic_filtering: false,
         },
+        limits: wgpu::Limits { max_bind_groups: 1 },
     });
 
     // Open window and create a surface
@@ -34,7 +35,7 @@ fn main() -> Result<(), String> {
     let mut swap_chain = device.create_swap_chain(
         &surface,
         &wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsageFlags::OUTPUT_ATTACHMENT,
+            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
             format: render_format,
             width: size.width.round() as u32,
             height: size.height.round() as u32,
@@ -66,7 +67,7 @@ fn main() -> Result<(), String> {
                 swap_chain = device.create_swap_chain(
                     &surface,
                     &wgpu::SwapChainDescriptor {
-                        usage: wgpu::TextureUsageFlags::OUTPUT_ATTACHMENT,
+                        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
                         format: render_format,
                         width: size.width.round() as u32,
                         height: size.height.round() as u32,
@@ -91,6 +92,7 @@ fn main() -> Result<(), String> {
                 color_attachments: &[
                     wgpu::RenderPassColorAttachmentDescriptor {
                         attachment: &frame.view,
+                        resolve_target: None,
                         load_op: wgpu::LoadOp::Clear,
                         store_op: wgpu::StoreOp::Store,
                         clear_color: wgpu::Color {

@@ -11,11 +11,13 @@ impl Cache {
                 height,
                 depth: 1,
             },
-            array_size: 1,
+            array_layer_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
-            usage: wgpu::TextureUsageFlags::TRANSFER_DST
-                | wgpu::TextureUsageFlags::SAMPLED,
+            usage: wgpu::TextureUsage::TRANSFER_DST
+                | wgpu::TextureUsage::SAMPLED,
+            mip_level_count: 1,
+            sample_count: 1,
         });
 
         let view = texture.create_default_view();
@@ -32,10 +34,7 @@ impl Cache {
         data: &[u8],
     ) {
         let buffer = device
-            .create_buffer_mapped(
-                data.len(),
-                wgpu::BufferUsageFlags::TRANSFER_SRC,
-            )
+            .create_buffer_mapped(data.len(), wgpu::BufferUsage::TRANSFER_SRC)
             .fill_from_slice(data);
 
         encoder.copy_buffer_to_texture(
@@ -47,8 +46,8 @@ impl Cache {
             },
             wgpu::TextureCopyView {
                 texture: &self.texture,
-                level: 0,
-                slice: 0,
+                array_layer: 0,
+                mip_level: 0,
                 origin: wgpu::Origin3d {
                     x: offset[0] as f32,
                     y: offset[1] as f32,
