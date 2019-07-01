@@ -11,9 +11,12 @@ documentation = "https://docs.rs/wgpu_glyph"
 readme = "README.md"
 
 [dependencies]
-wgpu = { version = "0.2", git = "https://github.com/hecrj/wgpu-rs", branch = "web" }
+wgpu = { version = "=0.2.2" }
 glyph_brush = "0.5"
 log = "0.4"
 
 [dev-dependencies]
 env_logger = "0.6"
+
+[patch.crates-io]
+wgpu = { version = "0.2.2", git = "https://github.com/gfx-rs/wgpu-rs", rev = "a4ad7ae6ff2fc42396b802968dcc95bbf0612235" }

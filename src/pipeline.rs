@@ -15,6 +15,8 @@ pub struct Pipeline {
     uniforms: wgpu::BindGroup,
     pipeline: wgpu::RenderPipeline,
     instances: wgpu::Buffer,
+    vertices: wgpu::Buffer,
+    indices: wgpu::Buffer,
     current_instances: usize,
     supported_instances: usize,
     current_transform: [f32; 16],
@@ -92,6 +94,14 @@ impl Pipeline {
             usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::TRANSFER_DST,
         });
 
+        let vertices = device
+            .create_buffer_mapped(QUAD_VERTS.len(), wgpu::BufferUsage::VERTEX)
+            .fill_from_slice(&QUAD_VERTS);
+
+        let indices = device
+            .create_buffer_mapped(QUAD_INDICES.len(), wgpu::BufferUsage::INDEX)
+            .fill_from_slice(&QUAD_INDICES);
+
         let layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 bind_group_layouts: &[&uniform_layout],
@@ -137,37 +147,48 @@ impl Pipeline {
                 }],
                 depth_stencil_state: None,
                 index_format: wgpu::IndexFormat::Uint16,
-                vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                    stride: mem::size_of::<Instance>() as u64,
-                    step_mode: wgpu::InputStepMode::Instance,
-                    attributes: &[
-                        wgpu::VertexAttributeDescriptor {
+                vertex_buffers: &[
+                    wgpu::VertexBufferDescriptor {
+                        stride: mem::size_of::<Vertex>() as u64,
+                        step_mode: wgpu::InputStepMode::Vertex,
+                        attributes: &[wgpu::VertexAttributeDescriptor {
                             shader_location: 0,
-                            format: wgpu::VertexFormat::Float3,
+                            format: wgpu::VertexFormat::Uint,
                             offset: 0,
-                        },
-                        wgpu::VertexAttributeDescriptor {
-                            shader_location: 1,
-                            format: wgpu::VertexFormat::Float2,
-                            offset: 4 * 3,
-                        },
-                        wgpu::VertexAttributeDescriptor {
-                            shader_location: 2,
-                            format: wgpu::VertexFormat::Float2,
-                            offset: 4 * (3 + 2),
-                        },
-                        wgpu::VertexAttributeDescriptor {
-                            shader_location: 3,
-                            format: wgpu::VertexFormat::Float2,
-                            offset: 4 * (3 + 2 + 2),
-                        },
-                        wgpu::VertexAttributeDescriptor {
-                            shader_location: 4,
-                            format: wgpu::VertexFormat::Float4,
-                            offset: 4 * (3 + 2 + 2 + 2),
-                        },
-                    ],
-                }],
+                        }],
+                    },
+                    wgpu::VertexBufferDescriptor {
+                        stride: mem::size_of::<Instance>() as u64,
+                        step_mode: wgpu::InputStepMode::Instance,
+                        attributes: &[
+                            wgpu::VertexAttributeDescriptor {
+                                shader_location: 1,
+                                format: wgpu::VertexFormat::Float3,
+                                offset: 0,
+                            },
+                            wgpu::VertexAttributeDescriptor {
+                                shader_location: 2,
+                                format: wgpu::VertexFormat::Float2,
+                                offset: 4 * 3,
+                            },
+                            wgpu::VertexAttributeDescriptor {
+                                shader_location: 3,
+                                format: wgpu::VertexFormat::Float2,
+                                offset: 4 * (3 + 2),
+                            },
+                            wgpu::VertexAttributeDescriptor {
+                                shader_location: 4,
+                                format: wgpu::VertexFormat::Float2,
+                                offset: 4 * (3 + 2 + 2),
+                            },
+                            wgpu::VertexAttributeDescriptor {
+                                shader_location: 5,
+                                format: wgpu::VertexFormat::Float4,
+                                offset: 4 * (3 + 2 + 2 + 2),
+                            },
+                        ],
+                    },
+                ],
                 sample_count: 1,
             });
 
@@ -179,6 +200,8 @@ impl Pipeline {
             uniforms,
             pipeline,
             instances,
+            vertices,
+            indices,
             current_instances: 0,
             supported_instances: Instance::INITIAL_AMOUNT,
             current_transform: [0.0; 16],
@@ -290,9 +313,10 @@ impl Pipeline {
 
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_bind_group(0, &self.uniforms, &[]);
-        render_pass.set_vertex_buffers(&[(&self.instances, 0)]);
+        render_pass.set_index_buffer(&self.indices, 0);
+        render_pass.set_vertex_buffers(&[(&self.vertices, 0), (&self.instances, 0)]);
 
-        render_pass.draw(0..4, 0..self.current_instances as u32);
+        render_pass.draw_indexed(0..4, 0, 0..self.current_instances as u32);
     }
 
     // Helpers
@@ -325,6 +349,28 @@ impl Pipeline {
         })
     }
 }
+
+#[derive(Clone, Copy)]
+pub struct Vertex {
+    id: u32,
+}
+
+const QUAD_INDICES: [u16; 4] = [0, 1, 2, 3];
+
+const QUAD_VERTS: [Vertex; 4] = [
+    Vertex {
+        id: 0,
+    },
+    Vertex {
+        id: 1,
+    },
+    Vertex {
+        id: 2,
+    },
+    Vertex {
+        id: 3,
+    },
+];
 
 #[derive(Debug, Clone, Copy)]
 pub struct Instance {
@@ -395,3 +441,4 @@ impl From<glyph_brush::GlyphVertex> for Instance {
         }
     }
 }
+
