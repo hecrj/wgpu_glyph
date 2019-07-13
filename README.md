@@ -8,7 +8,7 @@ A fast text renderer for [wgpu](https://github.com/gfx-rs/wgpu), powered by
 [glyph_brush](https://github.com/alexheretic/glyph-brush/tree/master/glyph-brush)
 
 ```rust
-use gfx_glyph::{Section, GlyphBrushBuilder};
+use wgpu_glyph::{Section, GlyphBrushBuilder};
 
 let font: &[u8] = include_bytes!("SomeFont.ttf");
 let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(font)
