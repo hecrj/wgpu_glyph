@@ -2,6 +2,7 @@
 //!
 //! [`wgpu`]: https://github.com/gfx-rs/wgpu
 //! [`glyph_brush`]: https://github.com/alexheretic/glyph-brush/tree/master/glyph-brush
+#![deny(unused_results)]
 mod builder;
 mod pipeline;
 
@@ -226,11 +227,11 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
                         );
                     }
 
-                    self.pipeline
+                    cache = self
+                        .pipeline
                         .increase_cache_size(device, new_width, new_height);
-                    self.glyph_brush.resize_texture(new_width, new_height);
 
-                    cache = self.pipeline.cache();
+                    self.glyph_brush.resize_texture(new_width, new_height);
                 }
             }
         }

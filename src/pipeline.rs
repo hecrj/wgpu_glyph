@@ -194,7 +194,7 @@ impl Pipeline {
         device: &wgpu::Device,
         width: u32,
         height: u32,
-    ) {
+    ) -> Rc<Cache> {
         self.cache = Rc::new(Cache::new(device, width, height));
 
         self.uniforms = Self::create_uniforms(
@@ -204,6 +204,8 @@ impl Pipeline {
             &self.sampler,
             &self.cache.view,
         );
+
+        self.cache.clone()
     }
 
     pub fn upload(
