@@ -181,7 +181,7 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
     ) -> Result<(), String> {
-        let cache = self.pipeline.cache();
+        let mut cache = self.pipeline.cache();
 
         let mut brush_action;
 
@@ -229,6 +229,8 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
                     self.pipeline
                         .increase_cache_size(device, new_width, new_height);
                     self.glyph_brush.resize_texture(new_width, new_height);
+
+                    cache = self.pipeline.cache();
                 }
             }
         }
