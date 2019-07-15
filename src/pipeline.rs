@@ -1,16 +1,14 @@
 mod cache;
 
-pub use cache::Cache;
-
-use std::mem;
-use std::rc::Rc;
+use cache::Cache;
 
 use glyph_brush::rusttype::{point, Rect};
+use std::mem;
 
 pub struct Pipeline {
     transform: wgpu::Buffer,
     sampler: wgpu::Sampler,
-    cache: Rc<Cache>,
+    cache: Cache,
     uniform_layout: wgpu::BindGroupLayout,
     uniforms: wgpu::BindGroup,
     pipeline: wgpu::RenderPipeline,
@@ -174,7 +172,7 @@ impl Pipeline {
         Pipeline {
             transform,
             sampler,
-            cache: Rc::new(cache),
+            cache,
             uniform_layout,
             uniforms,
             pipeline,
@@ -185,8 +183,15 @@ impl Pipeline {
         }
     }
 
-    pub fn cache(&self) -> Rc<Cache> {
-        self.cache.clone()
+    pub fn update_cache(
+        &mut self,
+        device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        offset: [u16; 2],
+        size: [u16; 2],
+        data: &[u8],
+    ) {
+        self.cache.update(device, encoder, offset, size, data);
     }
 
     pub fn increase_cache_size(
@@ -195,7 +200,7 @@ impl Pipeline {
         width: u32,
         height: u32,
     ) {
-        self.cache = Rc::new(Cache::new(device, width, height));
+        self.cache = Cache::new(device, width, height);
 
         self.uniforms = Self::create_uniforms(
             device,
