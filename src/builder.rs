@@ -7,12 +7,13 @@ use rusttype::{Font, SharedBytes};
 use super::GlyphBrush;
 
 /// Builder for a [`GlyphBrush`](struct.GlyphBrush.html).
-pub struct GlyphBrushBuilder<'a, H = DefaultSectionHasher> {
+pub struct GlyphBrushBuilder<'a, D, H = DefaultSectionHasher> {
     inner: glyph_brush::GlyphBrushBuilder<'a, H>,
     texture_filter_method: wgpu::FilterMode,
+    depth: D,
 }
 
-impl<'a> GlyphBrushBuilder<'a> {
+impl<'a> GlyphBrushBuilder<'a, ()> {
     /// Specifies the default font data used to render glyphs.
     /// Referenced with `FontId(0)`, which is default.
     #[inline]
@@ -46,11 +47,12 @@ impl<'a> GlyphBrushBuilder<'a> {
         GlyphBrushBuilder {
             inner: glyph_brush::GlyphBrushBuilder::using_fonts(fonts),
             texture_filter_method: wgpu::FilterMode::Linear,
+            depth: (),
         }
     }
 }
 
-impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, H> {
+impl<'a, D, H: BuildHasher> GlyphBrushBuilder<'a, D, H> {
     delegate_glyph_brush_builder_fns!(inner);
 
     /// Sets the texture filtering method.
@@ -72,24 +74,59 @@ impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, H> {
     pub fn section_hasher<T: BuildHasher>(
         self,
         section_hasher: T,
-    ) -> GlyphBrushBuilder<'a, T> {
+    ) -> GlyphBrushBuilder<'a, D, T> {
         GlyphBrushBuilder {
             inner: self.inner.section_hasher(section_hasher),
             texture_filter_method: self.texture_filter_method,
+            depth: self.depth,
         }
     }
 
+    /// Sets the depth stencil.
+    pub fn depth_stencil_state(
+        self,
+        depth_stencil_state: wgpu::DepthStencilStateDescriptor,
+    ) -> GlyphBrushBuilder<'a, wgpu::DepthStencilStateDescriptor, H> {
+        GlyphBrushBuilder {
+            inner: self.inner,
+            texture_filter_method: self.texture_filter_method,
+            depth: depth_stencil_state,
+        }
+    }
+}
+
+impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, (), H> {
     /// Builds a `GlyphBrush` using the given `wgpu::Device` that can render
     /// text for texture views with the given `render_format`.
     pub fn build(
         self,
         device: &mut wgpu::Device,
         render_format: wgpu::TextureFormat,
-    ) -> GlyphBrush<'a, H> {
-        GlyphBrush::new(
+    ) -> GlyphBrush<'a, (), H> {
+        GlyphBrush::<(), H>::new(
             device,
             self.texture_filter_method,
             render_format,
+            self.inner,
+        )
+    }
+}
+
+impl<'a, H: BuildHasher>
+    GlyphBrushBuilder<'a, wgpu::DepthStencilStateDescriptor, H>
+{
+    /// Builds a `GlyphBrush` using the given `wgpu::Device` that can render
+    /// text for texture views with the given `render_format`.
+    pub fn build(
+        self,
+        device: &mut wgpu::Device,
+        render_format: wgpu::TextureFormat,
+    ) -> GlyphBrush<'a, wgpu::DepthStencilStateDescriptor, H> {
+        GlyphBrush::<wgpu::DepthStencilStateDescriptor, H>::new(
+            device,
+            self.texture_filter_method,
+            render_format,
+            self.depth,
             self.inner,
         )
     }
