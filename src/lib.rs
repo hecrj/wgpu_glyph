@@ -27,34 +27,12 @@ use log::{log_enabled, warn};
 /// glyph draw caching & efficient GPU texture cache updating and re-sizing on demand.
 ///
 /// Build using a [`GlyphBrushBuilder`](struct.GlyphBrushBuilder.html).
-pub struct GlyphBrush<'font, H = DefaultSectionHasher> {
-    pipeline: Pipeline,
+pub struct GlyphBrush<'font, Depth, H = DefaultSectionHasher> {
+    pipeline: Pipeline<Depth>,
     glyph_brush: glyph_brush::GlyphBrush<'font, Instance, H>,
 }
 
-impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
-    fn new(
-        device: &mut wgpu::Device,
-        filter_mode: wgpu::FilterMode,
-        render_format: wgpu::TextureFormat,
-        raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
-    ) -> Self {
-        let (cache_width, cache_height) = raw_builder.initial_cache_size;
-
-        let pipeline = Pipeline::new(
-            device,
-            filter_mode,
-            render_format,
-            cache_width,
-            cache_height,
-        );
-
-        GlyphBrush {
-            pipeline: pipeline,
-            glyph_brush: raw_builder.build(),
-        }
-    }
-
+impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
     // Queues a section/layout to be drawn by the next call of
     /// [`draw_queued`](struct.GlyphBrush.html#method.draw_queued). Can be
     /// called multiple times to queue multiple sections for drawing.
@@ -133,55 +111,11 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         self.glyph_brush.keep_cached(section)
     }
 
-    /// Draws all queued sections onto a render target.
-    /// See [`queue`](struct.GlyphBrush.html#method.queue).
-    ///
-    /// It __does not__ submit the encoder command buffer to the device queue.
-    ///
-    /// Trims the cache, see [caching behaviour](#caching-behaviour).
-    ///
-    /// # Panics
-    /// Panics if the provided `target` has a texture format that does not match
-    /// the `render_format` provided on creation of the `GlyphBrush`.
-    #[inline]
-    pub fn draw_queued(
+    fn process_queued(
         &mut self,
         device: &mut wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
-        target: &wgpu::TextureView,
-        target_width: u32,
-        target_height: u32,
-    ) -> Result<(), String> {
-        #[cfg_attr(rustfmt, rustfmt_skip)]
-        let projection =
-            [
-                2.0 / target_width as f32, 0.0, 0.0, 0.0,
-                0.0, 2.0 / target_height as f32, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                -1.0, -1.0, 0.0, 1.0,
-            ];
-
-        self.draw_queued_with_transform(projection, device, encoder, target)
-    }
-
-    /// Draws all queued sections onto a render target, applying a position
-    /// transform (e.g. a projection).
-    /// See [`queue`](struct.GlyphBrush.html#method.queue).
-    ///
-    /// It __does not__ submit the encoder command buffer to the device queue.
-    ///
-    /// Trims the cache, see [caching behaviour](#caching-behaviour).
-    ///
-    /// # Panics
-    /// Panics if the provided `target` has a texture format that does not match
-    /// the `render_format` provided on creation of the `GlyphBrush`.
-    pub fn draw_queued_with_transform(
-        &mut self,
-        transform: [f32; 16],
-        device: &mut wgpu::Device,
-        encoder: &mut wgpu::CommandEncoder,
-        target: &wgpu::TextureView,
-    ) -> Result<(), String> {
+    ) {
         let pipeline = &mut self.pipeline;
 
         let mut brush_action;
@@ -237,14 +171,9 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
         match brush_action.unwrap() {
             BrushAction::Draw(verts) => {
                 self.pipeline.upload(device, encoder, &verts);
-                self.pipeline.draw(device, encoder, target, transform);
             }
-            BrushAction::ReDraw => {
-                self.pipeline.draw(device, encoder, target, transform);
-            }
+            BrushAction::ReDraw => {}
         };
-
-        Ok(())
     }
 
     /// Returns the available fonts.
@@ -254,6 +183,182 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, H> {
     pub fn fonts(&self) -> &[Font<'_>] {
         self.glyph_brush.fonts()
     }
+}
+
+impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
+    fn new(
+        device: &mut wgpu::Device,
+        filter_mode: wgpu::FilterMode,
+        render_format: wgpu::TextureFormat,
+        raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
+    ) -> Self {
+        let (cache_width, cache_height) = raw_builder.initial_cache_size;
+
+        GlyphBrush {
+            pipeline: Pipeline::<()>::new(
+                device,
+                filter_mode,
+                render_format,
+                cache_width,
+                cache_height,
+            ),
+            glyph_brush: raw_builder.build(),
+        }
+    }
+
+    /// Draws all queued sections onto a render target.
+    /// See [`queue`](struct.GlyphBrush.html#method.queue).
+    ///
+    /// It __does not__ submit the encoder command buffer to the device queue.
+    ///
+    /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Panics
+    /// Panics if the provided `target` has a texture format that does not match
+    /// the `render_format` provided on creation of the `GlyphBrush`.
+    #[inline]
+    pub fn draw_queued(
+        &mut self,
+        device: &mut wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+        target_width: u32,
+        target_height: u32,
+    ) -> Result<(), String> {
+        self.draw_queued_with_transform(
+            device,
+            encoder,
+            target,
+            orthographic_projection(target_width, target_height),
+        )
+    }
+
+    /// Draws all queued sections onto a render target, applying a position
+    /// transform (e.g. a projection).
+    /// See [`queue`](struct.GlyphBrush.html#method.queue).
+    ///
+    /// It __does not__ submit the encoder command buffer to the device queue.
+    ///
+    /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Panics
+    /// Panics if the provided `target` has a texture format that does not match
+    /// the `render_format` provided on creation of the `GlyphBrush`.
+    #[inline]
+    pub fn draw_queued_with_transform(
+        &mut self,
+        device: &mut wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+        transform: [f32; 16],
+    ) -> Result<(), String> {
+        self.process_queued(device, encoder);
+        self.pipeline.draw(device, encoder, target, transform);
+
+        Ok(())
+    }
+}
+
+impl<'font, H: BuildHasher>
+    GlyphBrush<'font, wgpu::DepthStencilStateDescriptor, H>
+{
+    fn new(
+        device: &mut wgpu::Device,
+        filter_mode: wgpu::FilterMode,
+        render_format: wgpu::TextureFormat,
+        depth_stencil_state: wgpu::DepthStencilStateDescriptor,
+        raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
+    ) -> Self {
+        let (cache_width, cache_height) = raw_builder.initial_cache_size;
+
+        GlyphBrush {
+            pipeline: Pipeline::<wgpu::DepthStencilStateDescriptor>::new(
+                device,
+                filter_mode,
+                render_format,
+                depth_stencil_state,
+                cache_width,
+                cache_height,
+            ),
+            glyph_brush: raw_builder.build(),
+        }
+    }
+
+    /// Draws all queued sections onto a render target.
+    /// See [`queue`](struct.GlyphBrush.html#method.queue).
+    ///
+    /// It __does not__ submit the encoder command buffer to the device queue.
+    ///
+    /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Panics
+    /// Panics if the provided `target` has a texture format that does not match
+    /// the `render_format` provided on creation of the `GlyphBrush`.
+    #[inline]
+    pub fn draw_queued(
+        &mut self,
+        device: &mut wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
+            &wgpu::TextureView,
+        >,
+        target_width: u32,
+        target_height: u32,
+    ) -> Result<(), String> {
+        self.draw_queued_with_transform(
+            device,
+            encoder,
+            target,
+            depth_stencil_attachment,
+            orthographic_projection(target_width, target_height),
+        )
+    }
+
+    /// Draws all queued sections onto a render target, applying a position
+    /// transform (e.g. a projection).
+    /// See [`queue`](struct.GlyphBrush.html#method.queue).
+    ///
+    /// It __does not__ submit the encoder command buffer to the device queue.
+    ///
+    /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Panics
+    /// Panics if the provided `target` has a texture format that does not match
+    /// the `render_format` provided on creation of the `GlyphBrush`.
+    #[inline]
+    pub fn draw_queued_with_transform(
+        &mut self,
+        device: &mut wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
+            &wgpu::TextureView,
+        >,
+        transform: [f32; 16],
+    ) -> Result<(), String> {
+        self.process_queued(device, encoder);
+        self.pipeline.draw(
+            device,
+            encoder,
+            target,
+            depth_stencil_attachment,
+            transform,
+        );
+
+        Ok(())
+    }
+}
+
+// Helpers
+fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    [
+        2.0 / width as f32, 0.0, 0.0, 0.0,
+        0.0, 2.0 / height as f32, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        -1.0, -1.0, 0.0, 1.0,
+    ]
 }
 
 impl<'font, H: BuildHasher> GlyphCruncher<'font> for GlyphBrush<'font, H> {
