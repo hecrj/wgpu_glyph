@@ -361,7 +361,9 @@ fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
     ]
 }
 
-impl<'font, H: BuildHasher> GlyphCruncher<'font> for GlyphBrush<'font, H> {
+impl<'font, D, H: BuildHasher> GlyphCruncher<'font>
+    for GlyphBrush<'font, D, H>
+{
     #[inline]
     fn pixel_bounds_custom_layout<'a, S, L>(
         &mut self,
