@@ -237,10 +237,11 @@ fn build<D>(
             bind_group_layouts: &[&uniform_layout],
         });
 
-    let vs_module =
-        device.create_shader_module(include_bytes!("shader/vertex.spv"));
-    let fs_module =
-        device.create_shader_module(include_bytes!("shader/fragment.spv"));
+    let vs = include_bytes!("shader/vertex.spv");
+    let vs_module = device.create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs[..])).unwrap());
+
+    let fs = include_bytes!("shader/fragment.spv");
+    let fs_module = device.create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs[..])).unwrap());
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         layout: &layout,
