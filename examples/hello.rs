@@ -7,16 +7,16 @@ fn main() -> Result<(), String> {
     // Initialize GPU
     let instance = wgpu::Instance::new();
 
-    let adapter = instance.get_adapter(&wgpu::AdapterDescriptor {
+    let adapter = instance.get_adapter(Some(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
-    });
+    }));
 
-    let mut device = adapter.request_device(&wgpu::DeviceDescriptor {
+    let mut device = adapter.request_device(Some(&wgpu::DeviceDescriptor {
         extensions: wgpu::Extensions {
             anisotropic_filtering: false,
         },
         limits: wgpu::Limits { max_bind_groups: 1 },
-    });
+    }));
 
     // Open window and create a surface
     let mut events_loop = winit::EventsLoop::new();
@@ -136,7 +136,7 @@ fn main() -> Result<(), String> {
             size.height.round() as u32,
         )?;
 
-        device.get_queue().submit(&[encoder.finish()]);
+        device.get_queue().submit(&[encoder.finish(None)]);
     }
 
     Ok(())

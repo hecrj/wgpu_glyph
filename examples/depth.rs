@@ -7,16 +7,16 @@ fn main() -> Result<(), String> {
     // Initialize GPU
     let instance = wgpu::Instance::new();
 
-    let adapter = instance.get_adapter(&wgpu::AdapterDescriptor {
+    let adapter = instance.get_adapter(Some(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
-    });
+    }));
 
-    let mut device = adapter.request_device(&wgpu::DeviceDescriptor {
+    let mut device = adapter.request_device(Some(&wgpu::DeviceDescriptor {
         extensions: wgpu::Extensions {
             anisotropic_filtering: false,
         },
         limits: wgpu::Limits { max_bind_groups: 1 },
-    });
+    }));
 
     // Open window and create a surface
     let mut events_loop = winit::EventsLoop::new();
@@ -51,7 +51,7 @@ fn main() -> Result<(), String> {
     let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
     let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(inconsolata)
         .depth_stencil_state(wgpu::DepthStencilStateDescriptor {
-            format: wgpu::TextureFormat::D32Float,
+            format: wgpu::TextureFormat::Depth32Float,
             depth_write_enabled: true,
             depth_compare: wgpu::CompareFunction::Greater,
             stencil_front: wgpu::StencilStateFaceDescriptor::IGNORE,
@@ -165,7 +165,7 @@ fn main() -> Result<(), String> {
             size.height.round() as u32,
         )?;
 
-        device.get_queue().submit(&[encoder.finish()]);
+        device.get_queue().submit(&[encoder.finish(None)]);
     }
 
     Ok(())
@@ -185,9 +185,9 @@ fn create_depth_view(
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::D32Float,
+        format: wgpu::TextureFormat::Depth32Float,
         usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
     });
 
-    depth_texture.create_default_view()
+    depth_texture.create_view(None)
 }
