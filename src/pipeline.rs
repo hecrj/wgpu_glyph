@@ -134,7 +134,7 @@ impl<Depth> Pipeline<Depth> {
                 size: mem::size_of::<Instance>() as u64
                     * instances.len() as u64,
                 usage: wgpu::BufferUsage::VERTEX
-                    | wgpu::BufferUsage::TRANSFER_DST,
+                    | wgpu::BufferUsage::COPY_DST,
             });
 
             self.supported_instances = instances.len();
@@ -143,7 +143,7 @@ impl<Depth> Pipeline<Depth> {
         let instance_buffer = device
             .create_buffer_mapped(
                 instances.len(),
-                wgpu::BufferUsage::TRANSFER_SRC,
+                wgpu::BufferUsage::COPY_SRC,
             )
             .fill_from_slice(instances);
 
@@ -179,7 +179,7 @@ fn build<D>(
     let transform = device
         .create_buffer_mapped(
             16,
-            wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::TRANSFER_DST,
+            wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         )
         .fill_from_slice(&IDENTITY_MATRIX);
 
@@ -204,16 +204,25 @@ fn build<D>(
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
                     ty: wgpu::BindingType::UniformBuffer,
+                    dynamic: false,
+                    multisampled: false,
+                    texture_dimension: wgpu::TextureViewDimension::D2,
                 },
                 wgpu::BindGroupLayoutBinding {
                     binding: 1,
                     visibility: wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::Sampler,
+                    dynamic: false,
+                    multisampled: false,
+                    texture_dimension: wgpu::TextureViewDimension::D2,
                 },
                 wgpu::BindGroupLayoutBinding {
                     binding: 2,
                     visibility: wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::SampledTexture,
+                    dynamic: false,
+                    multisampled: false,
+                    texture_dimension: wgpu::TextureViewDimension::D2,
                 },
             ],
         });
@@ -229,7 +238,7 @@ fn build<D>(
     let instances = device.create_buffer(&wgpu::BufferDescriptor {
         size: mem::size_of::<Instance>() as u64
             * Instance::INITIAL_AMOUNT as u64,
-        usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::TRANSFER_DST,
+        usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
     });
 
     let layout =
@@ -245,21 +254,21 @@ fn build<D>(
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         layout: &layout,
-        vertex_stage: wgpu::PipelineStageDescriptor {
+        vertex_stage: wgpu::ProgrammableStageDescriptor {
             module: &vs_module,
             entry_point: "main",
         },
-        fragment_stage: Some(wgpu::PipelineStageDescriptor {
+        fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
             module: &fs_module,
             entry_point: "main",
         }),
-        rasterization_state: wgpu::RasterizationStateDescriptor {
+        rasterization_state: Some(wgpu::RasterizationStateDescriptor {
             front_face: wgpu::FrontFace::Cw,
             cull_mode: wgpu::CullMode::None,
             depth_bias: 0,
             depth_bias_slope_scale: 0.0,
             depth_bias_clamp: 0.0,
-        },
+        }),
         primitive_topology: wgpu::PrimitiveTopology::TriangleStrip,
         color_states: &[wgpu::ColorStateDescriptor {
             format: render_format,
@@ -309,6 +318,8 @@ fn build<D>(
             ],
         }],
         sample_count: 1,
+        sample_mask: !0,
+        alpha_to_coverage_enabled: false,
     });
 
     Pipeline {
@@ -338,7 +349,7 @@ fn draw<D>(
 ) {
     if transform != pipeline.current_transform {
         let transform_buffer = device
-            .create_buffer_mapped(16, wgpu::BufferUsage::TRANSFER_SRC)
+            .create_buffer_mapped(16, wgpu::BufferUsage::COPY_SRC)
             .fill_from_slice(&transform[..]);
 
         encoder.copy_buffer_to_buffer(
@@ -371,7 +382,7 @@ fn draw<D>(
 
     render_pass.set_pipeline(&pipeline.raw);
     render_pass.set_bind_group(0, &pipeline.uniforms, &[]);
-    render_pass.set_vertex_buffers(&[(&pipeline.instances, 0)]);
+    render_pass.set_vertex_buffers(0, &[(&pipeline.instances, 0)]);
 
     render_pass.draw(0..4, 0..pipeline.current_instances as u32);
 }
