@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Depth testing support. It can be easily enabled using the new
   `GlyphBrushBuilder::depth_stencil_state` method. [#13]
 
+### Changed
+- `wgpu` dependency has been bumped to version `0.3`.
+
 ### Fixed
 - Incorrect use of old cache on resize, causing validation errors and panics. [#9]
 

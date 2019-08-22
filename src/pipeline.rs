@@ -133,18 +133,14 @@ impl<Depth> Pipeline<Depth> {
             self.instances = device.create_buffer(&wgpu::BufferDescriptor {
                 size: mem::size_of::<Instance>() as u64
                     * instances.len() as u64,
-                usage: wgpu::BufferUsage::VERTEX
-                    | wgpu::BufferUsage::COPY_DST,
+                usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
             });
 
             self.supported_instances = instances.len();
         }
 
         let instance_buffer = device
-            .create_buffer_mapped(
-                instances.len(),
-                wgpu::BufferUsage::COPY_SRC,
-            )
+            .create_buffer_mapped(instances.len(), wgpu::BufferUsage::COPY_SRC)
             .fill_from_slice(instances);
 
         encoder.copy_buffer_to_buffer(
@@ -203,26 +199,20 @@ fn build<D>(
                 wgpu::BindGroupLayoutBinding {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::UniformBuffer,
-                    dynamic: false,
-                    multisampled: false,
-                    texture_dimension: wgpu::TextureViewDimension::D2,
+                    ty: wgpu::BindingType::UniformBuffer { dynamic: false },
                 },
                 wgpu::BindGroupLayoutBinding {
                     binding: 1,
                     visibility: wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::Sampler,
-                    dynamic: false,
-                    multisampled: false,
-                    texture_dimension: wgpu::TextureViewDimension::D2,
                 },
                 wgpu::BindGroupLayoutBinding {
                     binding: 2,
                     visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::SampledTexture,
-                    dynamic: false,
-                    multisampled: false,
-                    texture_dimension: wgpu::TextureViewDimension::D2,
+                    ty: wgpu::BindingType::SampledTexture {
+                        multisampled: false,
+                        dimension: wgpu::TextureViewDimension::D2,
+                    },
                 },
             ],
         });
@@ -247,10 +237,14 @@ fn build<D>(
         });
 
     let vs = include_bytes!("shader/vertex.spv");
-    let vs_module = device.create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&vs[..])).unwrap());
+    let vs_module = device.create_shader_module(
+        &wgpu::read_spirv(std::io::Cursor::new(&vs[..])).unwrap(),
+    );
 
     let fs = include_bytes!("shader/fragment.spv");
-    let fs_module = device.create_shader_module(&wgpu::read_spirv(std::io::Cursor::new(&fs[..])).unwrap());
+    let fs_module = device.create_shader_module(
+        &wgpu::read_spirv(std::io::Cursor::new(&fs[..])).unwrap(),
+    );
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         layout: &layout,
