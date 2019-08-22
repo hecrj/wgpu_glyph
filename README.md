@@ -1,5 +1,6 @@
 # wgpu_glyph
-[![Build Status](https://travis-ci.org/hecrj/wgpu_glyph.svg?branch=master)](https://travis-ci.org/hecrj/wgpu_glyph)
+
+[![Integration status](https://github.com/hecrj/wgpu_glyph/workflows/Integration/badge.svg)](https://github.com/hecrj/wgpu_glyph/actions)
 [![crates.io](https://img.shields.io/crates/v/wgpu_glyph.svg)](https://crates.io/crates/wgpu_glyph)
 [![Documentation](https://docs.rs/wgpu_glyph/badge.svg)](https://docs.rs/wgpu_glyph)
 [![License](https://img.shields.io/crates/l/wgpu_glyph.svg)](https://github.com/hecrj/wgpu_glyph/blob/master/LICENSE)
