@@ -13,6 +13,16 @@ pub struct GlyphBrushBuilder<'a, D, H = DefaultSectionHasher> {
     depth: D,
 }
 
+impl<'a, H> From<glyph_brush::GlyphBrushBuilder<'a, H>> for GlyphBrushBuilder<'a, (), H> {
+    fn from(inner: glyph_brush::GlyphBrushBuilder<'a, H>) -> Self {
+        GlyphBrushBuilder {
+            inner,
+            texture_filter_method: wgpu::FilterMode::Linear,
+            depth: (),
+        }
+    }
+}
+
 impl<'a> GlyphBrushBuilder<'a, ()> {
     /// Specifies the default font data used to render glyphs.
     /// Referenced with `FontId(0)`, which is default.
