@@ -1,22 +1,24 @@
-use raw_window_handle::HasRawWindowHandle;
 use wgpu_glyph::{GlyphBrushBuilder, Scale, Section};
+
+const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 
 fn main() -> Result<(), String> {
     env_logger::init();
 
     // Initialize GPU
-    let instance = wgpu::Instance::new();
-
-    let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
+    let adapter = wgpu::Adapter::request(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
-    });
+        backends: wgpu::BackendBit::all(),
+    })
+    .expect("Request adapter");
 
-    let mut device = adapter.request_device(&wgpu::DeviceDescriptor {
-        extensions: wgpu::Extensions {
-            anisotropic_filtering: false,
-        },
-        limits: wgpu::Limits { max_bind_groups: 1 },
-    });
+    let (mut device, mut queue) =
+        adapter.request_device(&wgpu::DeviceDescriptor {
+            extensions: wgpu::Extensions {
+                anisotropic_filtering: false,
+            },
+            limits: wgpu::Limits { max_bind_groups: 1 },
+        });
 
     // Open window and create a surface
     let event_loop = winit::event_loop::EventLoop::new();
@@ -26,24 +28,14 @@ fn main() -> Result<(), String> {
         .build(&event_loop)
         .unwrap();
 
-    let surface = instance.create_surface(window.raw_window_handle());
+    let surface = wgpu::Surface::create(&window);
 
     // Prepare swap chain and depth buffer
-    let render_format = wgpu::TextureFormat::Bgra8UnormSrgb;
     let mut size = window.inner_size().to_physical(window.hidpi_factor());
+    let mut new_size = None;
 
-    let mut swap_chain = device.create_swap_chain(
-        &surface,
-        &wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-            format: render_format,
-            width: size.width.round() as u32,
-            height: size.height.round() as u32,
-            present_mode: wgpu::PresentMode::Vsync,
-        },
-    );
-
-    let mut depth_view = create_depth_view(&device, size);
+    let (mut swap_chain, mut depth_view) =
+        create_frame_views(&mut device, &surface, size);
 
     // Prepare glyph_brush
     let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
@@ -57,9 +49,11 @@ fn main() -> Result<(), String> {
             stencil_read_mask: 0,
             stencil_write_mask: 0,
         })
-        .build(&mut device, render_format);
+        .build(&mut device, FORMAT);
 
     // Render loop
+    window.request_redraw();
+
     event_loop.run(move |event, _, control_flow| {
         match event {
             winit::event::Event::WindowEvent {
@@ -67,25 +61,24 @@ fn main() -> Result<(), String> {
                 ..
             } => *control_flow = winit::event_loop::ControlFlow::Exit,
             winit::event::Event::WindowEvent {
-                event: winit::event::WindowEvent::Resized(new_size),
+                event: winit::event::WindowEvent::Resized(size),
                 ..
             } => {
-                size = new_size.to_physical(window.hidpi_factor());
-
-                swap_chain = device.create_swap_chain(
-                    &surface,
-                    &wgpu::SwapChainDescriptor {
-                        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-                        format: render_format,
-                        width: size.width.round() as u32,
-                        height: size.height.round() as u32,
-                        present_mode: wgpu::PresentMode::Vsync,
-                    },
-                );
-
-                depth_view = create_depth_view(&device, size);
+                new_size = Some(size.to_physical(window.hidpi_factor()));
             }
-            winit::event::Event::EventsCleared => {
+            winit::event::Event::WindowEvent {
+                event: winit::event::WindowEvent::RedrawRequested,
+                ..
+            } => {
+                if let Some(new_size) = new_size.take() {
+                    let (new_swap_chain, new_depth_view) =
+                        create_frame_views(&mut device, &surface, new_size);
+
+                    swap_chain = new_swap_chain;
+                    depth_view = new_depth_view;
+                    size = new_size;
+                }
+
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
                     &wgpu::CommandEncoderDescriptor { todo: 0 },
@@ -162,21 +155,38 @@ fn main() -> Result<(), String> {
                     )
                     .expect("Draw queued");
 
-                device.get_queue().submit(&[encoder.finish()]);
+                queue.submit(&[encoder.finish()]);
             }
-            _ => {}
+            _ => {
+                *control_flow = winit::event_loop::ControlFlow::Wait;
+            }
         }
     })
 }
 
-fn create_depth_view(
+fn create_frame_views(
     device: &wgpu::Device,
+    surface: &wgpu::Surface,
     size: winit::dpi::PhysicalSize,
-) -> wgpu::TextureView {
+) -> (wgpu::SwapChain, wgpu::TextureView) {
+    let (width, height) =
+        (size.width.round() as u32, size.height.round() as u32);
+
+    let swap_chain = device.create_swap_chain(
+        surface,
+        &wgpu::SwapChainDescriptor {
+            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            format: FORMAT,
+            width,
+            height,
+            present_mode: wgpu::PresentMode::Vsync,
+        },
+    );
+
     let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
         size: wgpu::Extent3d {
-            width: size.width as u32,
-            height: size.height as u32,
+            width,
+            height,
             depth: 1,
         },
         array_layer_count: 1,
@@ -187,5 +197,5 @@ fn create_depth_view(
         usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
     });
 
-    depth_texture.create_default_view()
+    (swap_chain, depth_texture.create_default_view())
 }

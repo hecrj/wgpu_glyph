@@ -1,22 +1,22 @@
-use raw_window_handle::HasRawWindowHandle;
 use wgpu_glyph::{GlyphBrushBuilder, Scale, Section};
 
 fn main() -> Result<(), String> {
     env_logger::init();
 
     // Initialize GPU
-    let instance = wgpu::Instance::new();
-
-    let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
+    let adapter = wgpu::Adapter::request(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
-    });
+        backends: wgpu::BackendBit::all(),
+    })
+    .expect("Request adapter");
 
-    let mut device = adapter.request_device(&wgpu::DeviceDescriptor {
-        extensions: wgpu::Extensions {
-            anisotropic_filtering: false,
-        },
-        limits: wgpu::Limits { max_bind_groups: 1 },
-    });
+    let (mut device, mut queue) =
+        adapter.request_device(&wgpu::DeviceDescriptor {
+            extensions: wgpu::Extensions {
+                anisotropic_filtering: false,
+            },
+            limits: wgpu::Limits { max_bind_groups: 1 },
+        });
 
     // Open window and create a surface
     let event_loop = winit::event_loop::EventLoop::new();
@@ -26,7 +26,7 @@ fn main() -> Result<(), String> {
         .build(&event_loop)
         .unwrap();
 
-    let surface = instance.create_surface(window.raw_window_handle());
+    let surface = wgpu::Surface::create(&window);
 
     // Prepare swap chain
     let render_format = wgpu::TextureFormat::Bgra8UnormSrgb;
@@ -49,6 +49,8 @@ fn main() -> Result<(), String> {
         .build(&mut device, render_format);
 
     // Render loop
+    window.request_redraw();
+
     event_loop.run(move |event, _, control_flow| {
         match event {
             winit::event::Event::WindowEvent {
@@ -72,7 +74,10 @@ fn main() -> Result<(), String> {
                     },
                 );
             }
-            winit::event::Event::EventsCleared => {
+            winit::event::Event::WindowEvent {
+                event: winit::event::WindowEvent::RedrawRequested,
+                ..
+            } => {
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
                     &wgpu::CommandEncoderDescriptor { todo: 0 },
@@ -133,9 +138,11 @@ fn main() -> Result<(), String> {
                     )
                     .expect("Draw queued");
 
-                device.get_queue().submit(&[encoder.finish()]);
+                queue.submit(&[encoder.finish()]);
             }
-            _ => {}
+            _ => {
+                *control_flow = winit::event_loop::ControlFlow::Wait;
+            }
         }
     })
 }
