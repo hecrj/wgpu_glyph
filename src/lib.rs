@@ -192,8 +192,8 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
         render_format: wgpu::TextureFormat,
         raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
     ) -> Self {
-        let (cache_width, cache_height) = raw_builder.initial_cache_size;
-
+        let glyph_brush = raw_builder.build();
+        let (cache_width, cache_height) = glyph_brush.texture_dimensions();
         GlyphBrush {
             pipeline: Pipeline::<()>::new(
                 device,
@@ -202,7 +202,7 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
                 cache_width,
                 cache_height,
             ),
-            glyph_brush: raw_builder.build(),
+            glyph_brush,
         }
     }
 
@@ -269,8 +269,8 @@ impl<'font, H: BuildHasher>
         depth_stencil_state: wgpu::DepthStencilStateDescriptor,
         raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
     ) -> Self {
-        let (cache_width, cache_height) = raw_builder.initial_cache_size;
-
+        let glyph_brush = raw_builder.build();
+        let (cache_width, cache_height) = glyph_brush.texture_dimensions();
         GlyphBrush {
             pipeline: Pipeline::<wgpu::DepthStencilStateDescriptor>::new(
                 device,
@@ -280,7 +280,7 @@ impl<'font, H: BuildHasher>
                 cache_width,
                 cache_height,
             ),
-            glyph_brush: raw_builder.build(),
+            glyph_brush,
         }
     }
 
