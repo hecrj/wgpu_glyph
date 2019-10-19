@@ -11,11 +11,11 @@ documentation = "https://docs.rs/wgpu_glyph"
 readme = "README.md"
 
 [dependencies]
-wgpu = { version = "0.3", git = "https://github.com/gfx-rs/wgpu-rs", rev = "cb25914b95b58fee0dc139b400867e7a731d98f4" }
-glyph_brush = "0.5"
+wgpu = { version = "0.3", git = "https://github.com/gfx-rs/wgpu-rs", rev = "012d08d64de924da93289c2b51fb06b22d7348cf" }
+glyph_brush = "0.6"
 log = "0.4"
 
 [dev-dependencies]
-env_logger = "0.6"
-winit = "0.20.0-alpha3"
-raw-window-handle = "0.1"
+env_logger = "0.7"
+winit = "0.20.0-alpha4"
+raw-window-handle = "0.3"
