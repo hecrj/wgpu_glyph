@@ -33,7 +33,7 @@ pub struct GlyphBrush<'font, Depth, H = DefaultSectionHasher> {
 }
 
 impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
-    // Queues a section/layout to be drawn by the next call of
+    /// Queues a section/layout to be drawn by the next call of
     /// [`draw_queued`](struct.GlyphBrush.html#method.draw_queued). Can be
     /// called multiple times to queue multiple sections for drawing.
     ///
