@@ -11,9 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `From<glyph_brush::GlyphBrushBuilder>` implementation for `wgpu_glyph::GlyphBrushBuilder`. [#19]
 
 ### Changed
-- `wgpu` dependency updated to `0.4`.
-- `glyph-brush` dependency updated to `0.6`.
+- `glyph-brush` dependency updated to `0.6`. [#21]
+- `wgpu` dependency updated to `0.4`. [#24]
 
+
+[#19]: https://github.com/hecrj/wgpu_glyph/pull/19
+[#21]: https://github.com/hecrj/wgpu_glyph/pull/21
+[#24]: https://github.com/hecrj/wgpu_glyph/pull/24
 
 ## [0.4.0]
 ### Added
