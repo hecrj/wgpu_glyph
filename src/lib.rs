@@ -186,6 +186,23 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
     pub fn fonts(&self) -> &[Font<'_>] {
         self.glyph_brush.fonts()
     }
+
+    /// Adds an additional font to the one(s) initially added on build.
+    ///
+    /// Returns a new [`FontId`](struct.FontId.html) to reference this font.
+    pub fn add_font_bytes<'a: 'font, B: Into<SharedBytes<'a>>>(
+        &mut self,
+        font_data: B,
+    ) -> FontId {
+        self.glyph_brush.add_font_bytes(font_data)
+    }
+
+    /// Adds an additional font to the one(s) initially added on build.
+    ///
+    /// Returns a new [`FontId`](struct.FontId.html) to reference this font.
+    pub fn add_font<'a: 'font>(&mut self, font_data: Font<'a>) -> FontId {
+        self.glyph_brush.add_font(font_data)
+    }
 }
 
 impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
