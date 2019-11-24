@@ -6,7 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0]
+## [0.6.0] - 2019-11-24
+### Added
+- `GlyphBrush::add_font_bytes` and `GlyphBrush::add_font`, which allow loading fonts after building a `GlyphBrush` [#25]
+- `GlyphBrush::draw_queued_with_transform_and_scissoring`, which allows clipping text in the given `Region`. [#25]
+
+[#25]: https://github.com/hecrj/wgpu_glyph/pull/25
+
+## [0.5.0] - 2019-11-05
 ### Added
 - `From<glyph_brush::GlyphBrushBuilder>` implementation for `wgpu_glyph::GlyphBrushBuilder`. [#19]
 
@@ -19,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#21]: https://github.com/hecrj/wgpu_glyph/pull/21
 [#24]: https://github.com/hecrj/wgpu_glyph/pull/24
 
-## [0.4.0]
+## [0.4.0] - 2019-10-23
 ### Added
 - Depth testing support. It can be easily enabled using the new
   `GlyphBrushBuilder::depth_stencil_state` method. [#13]
@@ -71,7 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release! :tada:
 
 
-[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/hecrj/wgpu_glyph/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/hecrj/wgpu_glyph/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/hecrj/wgpu_glyph/compare/0.3.1...0.4.0
 [0.3.1]: https://github.com/hecrj/wgpu_glyph/compare/0.3.0...0.3.1
