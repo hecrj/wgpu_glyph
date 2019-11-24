@@ -79,6 +79,7 @@ impl Pipeline<wgpu::DepthStencilStateDescriptor> {
             &wgpu::TextureView,
         >,
         transform: [f32; 16],
+        region: Option<Region>,
     ) {
         draw(
             self,
@@ -87,7 +88,7 @@ impl Pipeline<wgpu::DepthStencilStateDescriptor> {
             target,
             Some(depth_stencil_attachment),
             transform,
-            None,
+            region,
         );
     }
 }
