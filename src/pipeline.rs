@@ -1,5 +1,6 @@
 mod cache;
 
+use crate::Region;
 use cache::Cache;
 
 use glyph_brush::rusttype::{point, Rect};
@@ -44,8 +45,9 @@ impl Pipeline<()> {
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
+        region: Option<Region>,
     ) {
-        draw(self, device, encoder, target, None, transform);
+        draw(self, device, encoder, target, None, transform, region);
     }
 }
 
@@ -77,6 +79,7 @@ impl Pipeline<wgpu::DepthStencilStateDescriptor> {
             &wgpu::TextureView,
         >,
         transform: [f32; 16],
+        region: Option<Region>,
     ) {
         draw(
             self,
@@ -85,6 +88,7 @@ impl Pipeline<wgpu::DepthStencilStateDescriptor> {
             target,
             Some(depth_stencil_attachment),
             transform,
+            region,
         );
     }
 }
@@ -340,6 +344,7 @@ fn draw<D>(
         wgpu::RenderPassDepthStencilAttachmentDescriptor<&wgpu::TextureView>,
     >,
     transform: [f32; 16],
+    region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
         let transform_buffer = device
@@ -377,6 +382,15 @@ fn draw<D>(
     render_pass.set_pipeline(&pipeline.raw);
     render_pass.set_bind_group(0, &pipeline.uniforms, &[]);
     render_pass.set_vertex_buffers(0, &[(&pipeline.instances, 0)]);
+
+    if let Some(region) = region {
+        render_pass.set_scissor_rect(
+            region.x,
+            region.y,
+            region.width,
+            region.height,
+        );
+    }
 
     render_pass.draw(0..4, 0..pipeline.current_instances as u32);
 }

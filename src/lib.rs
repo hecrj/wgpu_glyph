@@ -5,6 +5,9 @@
 #![deny(unused_results)]
 mod builder;
 mod pipeline;
+mod region;
+
+pub use region::Region;
 
 use pipeline::{Instance, Pipeline};
 
@@ -183,6 +186,23 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
     pub fn fonts(&self) -> &[Font<'_>] {
         self.glyph_brush.fonts()
     }
+
+    /// Adds an additional font to the one(s) initially added on build.
+    ///
+    /// Returns a new [`FontId`](struct.FontId.html) to reference this font.
+    pub fn add_font_bytes<'a: 'font, B: Into<SharedBytes<'a>>>(
+        &mut self,
+        font_data: B,
+    ) -> FontId {
+        self.glyph_brush.add_font_bytes(font_data)
+    }
+
+    /// Adds an additional font to the one(s) initially added on build.
+    ///
+    /// Returns a new [`FontId`](struct.FontId.html) to reference this font.
+    pub fn add_font<'a: 'font>(&mut self, font_data: Font<'a>) -> FontId {
+        self.glyph_brush.add_font(font_data)
+    }
 }
 
 impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
@@ -253,7 +273,34 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
         transform: [f32; 16],
     ) -> Result<(), String> {
         self.process_queued(device, encoder);
-        self.pipeline.draw(device, encoder, target, transform);
+        self.pipeline.draw(device, encoder, target, transform, None);
+
+        Ok(())
+    }
+
+    /// Draws all queued sections onto a render target, applying a position
+    /// transform (e.g. a projection) and a scissoring region.
+    /// See [`queue`](struct.GlyphBrush.html#method.queue).
+    ///
+    /// It __does not__ submit the encoder command buffer to the device queue.
+    ///
+    /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Panics
+    /// Panics if the provided `target` has a texture format that does not match
+    /// the `render_format` provided on creation of the `GlyphBrush`.
+    #[inline]
+    pub fn draw_queued_with_transform_and_scissoring(
+        &mut self,
+        device: &mut wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+        transform: [f32; 16],
+        region: Region,
+    ) -> Result<(), String> {
+        self.process_queued(device, encoder);
+        self.pipeline
+            .draw(device, encoder, target, transform, Some(region));
 
         Ok(())
     }
@@ -344,6 +391,44 @@ impl<'font, H: BuildHasher>
             target,
             depth_stencil_attachment,
             transform,
+            None,
+        );
+
+        Ok(())
+    }
+
+    /// Draws all queued sections onto a render target, applying a position
+    /// transform (e.g. a projection) and a scissoring region.
+    /// See [`queue`](struct.GlyphBrush.html#method.queue).
+    ///
+    /// It __does not__ submit the encoder command buffer to the device queue.
+    ///
+    /// Trims the cache, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Panics
+    /// Panics if the provided `target` has a texture format that does not match
+    /// the `render_format` provided on creation of the `GlyphBrush`.
+    #[inline]
+    pub fn draw_queued_with_transform_and_scissoring(
+        &mut self,
+        device: &mut wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
+            &wgpu::TextureView,
+        >,
+        transform: [f32; 16],
+        region: Region,
+    ) -> Result<(), String> {
+        self.process_queued(device, encoder);
+
+        self.pipeline.draw(
+            device,
+            encoder,
+            target,
+            depth_stencil_attachment,
+            transform,
+            Some(region),
         );
 
         Ok(())
