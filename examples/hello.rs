@@ -46,6 +46,7 @@ fn main() -> Result<(), String> {
     // Prepare glyph_brush
     let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
     let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(inconsolata)
+        .expect("Load fonts")
         .build(&mut device, render_format);
 
     // Render loop
