@@ -207,7 +207,7 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
 
 impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
     fn new(
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
         raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
@@ -310,7 +310,7 @@ impl<'font, H: BuildHasher>
     GlyphBrush<'font, wgpu::DepthStencilStateDescriptor, H>
 {
     fn new(
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
         depth_stencil_state: wgpu::DepthStencilStateDescriptor,

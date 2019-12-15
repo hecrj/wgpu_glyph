@@ -49,7 +49,7 @@ fn main() -> Result<(), String> {
             stencil_read_mask: 0,
             stencil_write_mask: 0,
         })
-        .build(&mut device, FORMAT);
+        .build(&device, FORMAT);
 
     // Render loop
     window.request_redraw();
