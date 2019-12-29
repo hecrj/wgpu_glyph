@@ -116,7 +116,7 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
 
     fn process_queued(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
     ) {
         let pipeline = &mut self.pipeline;
@@ -239,7 +239,7 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
     #[inline]
     pub fn draw_queued(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         target_width: u32,
@@ -267,7 +267,7 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
     #[inline]
     pub fn draw_queued_with_transform(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
@@ -292,7 +292,7 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
     #[inline]
     pub fn draw_queued_with_transform_and_scissoring(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
@@ -344,7 +344,7 @@ impl<'font, H: BuildHasher>
     #[inline]
     pub fn draw_queued(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
@@ -376,7 +376,7 @@ impl<'font, H: BuildHasher>
     #[inline]
     pub fn draw_queued_with_transform(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
@@ -411,7 +411,7 @@ impl<'font, H: BuildHasher>
     #[inline]
     pub fn draw_queued_with_transform_and_scissoring(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
