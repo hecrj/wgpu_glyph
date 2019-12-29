@@ -4,19 +4,21 @@ fn main() -> Result<(), String> {
     env_logger::init();
 
     // Initialize GPU
-    let adapter = wgpu::Adapter::request(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::HighPerformance,
-        backends: wgpu::BackendBit::all(),
-    })
-    .expect("Request adapter");
+    let adapter: wgpu::Adapter = futures::executor::block_on(wgpu::Adapter::request(
+        &wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            compatible_surface: None,
+        },
+        wgpu::BackendBit::all(),
+    )).expect("Request adapter");
 
-    let (mut device, mut queue) =
+    let (mut device, queue) = futures::executor::block_on(
         adapter.request_device(&wgpu::DeviceDescriptor {
             extensions: wgpu::Extensions {
                 anisotropic_filtering: false,
             },
             limits: wgpu::Limits { max_bind_groups: 1 },
-        });
+        }));
 
     // Open window and create a surface
     let event_loop = winit::event_loop::EventLoop::new();
@@ -39,7 +41,7 @@ fn main() -> Result<(), String> {
             format: render_format,
             width: size.width,
             height: size.height,
-            present_mode: wgpu::PresentMode::Vsync,
+            present_mode: wgpu::PresentMode::Fifo,
         },
     );
 
@@ -71,18 +73,24 @@ fn main() -> Result<(), String> {
                         format: render_format,
                         width: size.width,
                         height: size.height,
-                        present_mode: wgpu::PresentMode::Vsync,
+                        present_mode: wgpu::PresentMode::Fifo,
                     },
                 );
             }
             winit::event::Event::RedrawRequested { .. } => {
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
-                    &wgpu::CommandEncoderDescriptor { todo: 0 },
+                    &wgpu::CommandEncoderDescriptor { label: None },
                 );
 
                 // Get the next frame
-                let frame = swap_chain.get_next_texture();
+                let frame = match swap_chain.get_next_texture() {
+                    Ok(frame) => frame,
+                    Err(_) => {
+                        *control_flow = winit::event_loop::ControlFlow::Exit;
+                        return;
+                    }
+                };
 
                 // Clear frame
                 {
