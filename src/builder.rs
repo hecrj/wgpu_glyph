@@ -116,7 +116,7 @@ impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, (), H> {
     /// text for texture views with the given `render_format`.
     pub fn build(
         self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         render_format: wgpu::TextureFormat,
     ) -> GlyphBrush<'a, (), H> {
         GlyphBrush::<(), H>::new(
@@ -135,7 +135,7 @@ impl<'a, H: BuildHasher>
     /// text for texture views with the given `render_format`.
     pub fn build(
         self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         render_format: wgpu::TextureFormat,
     ) -> GlyphBrush<'a, wgpu::DepthStencilStateDescriptor, H> {
         GlyphBrush::<wgpu::DepthStencilStateDescriptor, H>::new(

@@ -39,19 +39,19 @@ fn main() -> Result<(), String> {
 
     // Prepare glyph_brush
     let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
-    let mut glyph_brush =
-        GlyphBrushBuilder::using_fonts_bytes(vec![inconsolata])
-            .expect("Load fonts")
-            .depth_stencil_state(wgpu::DepthStencilStateDescriptor {
-                format: wgpu::TextureFormat::Depth32Float,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Greater,
-                stencil_front: wgpu::StencilStateFaceDescriptor::IGNORE,
-                stencil_back: wgpu::StencilStateFaceDescriptor::IGNORE,
-                stencil_read_mask: 0,
-                stencil_write_mask: 0,
-            })
-            .build(&mut device, FORMAT);
+
+    let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(inconsolata)
+        .expect("Load fonts")
+        .depth_stencil_state(wgpu::DepthStencilStateDescriptor {
+            format: wgpu::TextureFormat::Depth32Float,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::Greater,
+            stencil_front: wgpu::StencilStateFaceDescriptor::IGNORE,
+            stencil_back: wgpu::StencilStateFaceDescriptor::IGNORE,
+            stencil_read_mask: 0,
+            stencil_write_mask: 0,
+        })
+        .build(&device, FORMAT);
 
     // Render loop
     window.request_redraw();

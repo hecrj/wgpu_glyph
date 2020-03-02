@@ -1,4 +1,4 @@
-use wgpu_glyph::{GlyphBrushBuilder, Scale, Section};
+use wgpu_glyph::{GlyphBrushBuilder, Region, Scale, Section};
 
 fn main() -> Result<(), String> {
     env_logger::init();
@@ -46,7 +46,7 @@ fn main() -> Result<(), String> {
     // Prepare glyph_brush
     let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
     let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(inconsolata)
-        .expect("Load fonts")
+        .expect("Load font")
         .build(&device, render_format);
 
     // Render loop
@@ -75,10 +75,7 @@ fn main() -> Result<(), String> {
                     },
                 );
             }
-            winit::event::Event::WindowEvent {
-                event: winit::event::WindowEvent::RedrawRequested,
-                ..
-            } => {
+            winit::event::Event::EventsCleared => {
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
                     &wgpu::CommandEncoderDescriptor { todo: 0 },
@@ -119,15 +116,6 @@ fn main() -> Result<(), String> {
                     ..Section::default()
                 });
 
-                glyph_brush.queue(Section {
-                    text: "Hello wgpu_glyph!",
-                    screen_position: (30.0, 90.0),
-                    color: [1.0, 1.0, 1.0, 1.0],
-                    scale: Scale { x: 40.0, y: 40.0 },
-                    bounds: (size.width as f32, size.height as f32),
-                    ..Section::default()
-                });
-
                 // Draw the text!
                 glyph_brush
                     .draw_queued(
@@ -139,6 +127,34 @@ fn main() -> Result<(), String> {
                     )
                     .expect("Draw queued");
 
+                glyph_brush.queue(Section {
+                    text: "Hello wgpu_glyph!",
+                    screen_position: (30.0, 90.0),
+                    color: [1.0, 1.0, 1.0, 1.0],
+                    scale: Scale { x: 40.0, y: 40.0 },
+                    bounds: (size.width as f32, size.height as f32),
+                    ..Section::default()
+                });
+
+                // Draw the text!
+                glyph_brush
+                    .draw_queued_with_transform_and_scissoring(
+                        &mut device,
+                        &mut encoder,
+                        &frame.view,
+                        orthographic_projection(
+                            size.width.round() as u32,
+                            size.height.round() as u32,
+                        ),
+                        Region {
+                            x: 40,
+                            y: 105,
+                            width: 200,
+                            height: 15,
+                        },
+                    )
+                    .expect("Draw queued");
+
                 queue.submit(&[encoder.finish()]);
             }
             _ => {
@@ -146,4 +162,14 @@ fn main() -> Result<(), String> {
             }
         }
     })
+}
+
+fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    [
+        2.0 / width as f32, 0.0, 0.0, 0.0,
+        0.0, 2.0 / height as f32, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        -1.0, -1.0, 0.0, 1.0,
+    ]
 }

@@ -41,7 +41,7 @@ impl Pipeline<()> {
 
     pub fn draw(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
@@ -72,7 +72,7 @@ impl Pipeline<wgpu::DepthStencilStateDescriptor> {
 
     pub fn draw(
         &mut self,
-        device: &mut wgpu::Device,
+        device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
@@ -337,7 +337,7 @@ fn build<D>(
 
 fn draw<D>(
     pipeline: &mut Pipeline<D>,
-    device: &mut wgpu::Device,
+    device: &wgpu::Device,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
     depth_stencil_attachment: Option<
