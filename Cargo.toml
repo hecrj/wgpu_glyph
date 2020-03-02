@@ -17,5 +17,5 @@ log = "0.4"
 
 [dev-dependencies]
 env_logger = "0.7"
-winit = "=0.20.0-alpha4"
+winit = "0.21"
 raw-window-handle = "0.3"

@@ -31,7 +31,7 @@ fn main() -> Result<(), String> {
     let surface = wgpu::Surface::create(&window);
 
     // Prepare swap chain and depth buffer
-    let mut size = window.inner_size().to_physical(window.hidpi_factor());
+    let mut size = window.inner_size();
     let mut new_size = None;
 
     let (mut swap_chain, mut depth_view) =
@@ -66,12 +66,9 @@ fn main() -> Result<(), String> {
                 event: winit::event::WindowEvent::Resized(size),
                 ..
             } => {
-                new_size = Some(size.to_physical(window.hidpi_factor()));
+                new_size = Some(size);
             }
-            winit::event::Event::WindowEvent {
-                event: winit::event::WindowEvent::RedrawRequested,
-                ..
-            } => {
+            winit::event::Event::RedrawRequested { .. } => {
                 if let Some(new_size) = new_size.take() {
                     let (new_swap_chain, new_depth_view) =
                         create_frame_views(&mut device, &surface, new_size);
@@ -152,8 +149,8 @@ fn main() -> Result<(), String> {
                             clear_depth: -1.0,
                             clear_stencil: 0,
                         },
-                        size.width.round() as u32,
-                        size.height.round() as u32,
+                        size.width,
+                        size.height,
                     )
                     .expect("Draw queued");
 
@@ -169,10 +166,9 @@ fn main() -> Result<(), String> {
 fn create_frame_views(
     device: &wgpu::Device,
     surface: &wgpu::Surface,
-    size: winit::dpi::PhysicalSize,
+    size: winit::dpi::PhysicalSize<u32>,
 ) -> (wgpu::SwapChain, wgpu::TextureView) {
-    let (width, height) =
-        (size.width.round() as u32, size.height.round() as u32);
+    let (width, height) = (size.width, size.height);
 
     let swap_chain = device.create_swap_chain(
         surface,

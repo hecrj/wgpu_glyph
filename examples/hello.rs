@@ -30,15 +30,15 @@ fn main() -> Result<(), String> {
 
     // Prepare swap chain
     let render_format = wgpu::TextureFormat::Bgra8UnormSrgb;
-    let mut size = window.inner_size().to_physical(window.hidpi_factor());
+    let mut size = window.inner_size();
 
     let mut swap_chain = device.create_swap_chain(
         &surface,
         &wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
             format: render_format,
-            width: size.width.round() as u32,
-            height: size.height.round() as u32,
+            width: size.width,
+            height: size.height,
             present_mode: wgpu::PresentMode::Vsync,
         },
     );
@@ -62,23 +62,20 @@ fn main() -> Result<(), String> {
                 event: winit::event::WindowEvent::Resized(new_size),
                 ..
             } => {
-                size = new_size.to_physical(window.hidpi_factor());
+                size = new_size;
 
                 swap_chain = device.create_swap_chain(
                     &surface,
                     &wgpu::SwapChainDescriptor {
                         usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
                         format: render_format,
-                        width: size.width.round() as u32,
-                        height: size.height.round() as u32,
+                        width: size.width,
+                        height: size.height,
                         present_mode: wgpu::PresentMode::Vsync,
                     },
                 );
             }
-            winit::event::Event::WindowEvent {
-                event: winit::event::WindowEvent::RedrawRequested,
-                ..
-            } => {
+            winit::event::Event::RedrawRequested { .. } => {
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
                     &wgpu::CommandEncoderDescriptor { todo: 0 },
@@ -134,8 +131,8 @@ fn main() -> Result<(), String> {
                         &mut device,
                         &mut encoder,
                         &frame.view,
-                        size.width.round() as u32,
-                        size.height.round() as u32,
+                        size.width,
+                        size.height,
                     )
                     .expect("Draw queued");
 
