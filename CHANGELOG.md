@@ -6,12 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.7.0] - 2020-03-02
+### Changed
+- `GlyphBrush::build` and `GlyphBrush::draw_queued*` methods take an immutable reference of a `wgpu::Device` now. [#29] [#30]
+- `GlyphBrush::using_font_bytes` and `GlyphBrush::using_fonts_bytes` return an error instead of panicking when the provided font cannot be loaded. [#31]
+
+[#29]: https://github.com/hecrj/wgpu_glyph/pull/29
+[#30]: https://github.com/hecrj/wgpu_glyph/pull/30
+[#31]: https://github.com/hecrj/wgpu_glyph/pull/31
+
+
 ## [0.6.0] - 2019-11-24
 ### Added
 - `GlyphBrush::add_font_bytes` and `GlyphBrush::add_font`, which allow loading fonts after building a `GlyphBrush` [#25]
 - `GlyphBrush::draw_queued_with_transform_and_scissoring`, which allows clipping text in the given `Region`. [#25]
 
 [#25]: https://github.com/hecrj/wgpu_glyph/pull/25
+
 
 ## [0.5.0] - 2019-11-05
 ### Added
@@ -21,10 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `glyph-brush` dependency updated to `0.6`. [#21]
 - `wgpu` dependency updated to `0.4`. [#24]
 
-
 [#19]: https://github.com/hecrj/wgpu_glyph/pull/19
 [#21]: https://github.com/hecrj/wgpu_glyph/pull/21
 [#24]: https://github.com/hecrj/wgpu_glyph/pull/24
+
 
 ## [0.4.0] - 2019-10-23
 ### Added
@@ -78,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release! :tada:
 
 
-[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/hecrj/wgpu_glyph/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/hecrj/wgpu_glyph/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/hecrj/wgpu_glyph/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/hecrj/wgpu_glyph/compare/0.3.1...0.4.0
