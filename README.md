@@ -13,7 +13,8 @@ use wgpu_glyph::{Section, GlyphBrushBuilder};
 
 let font: &[u8] = include_bytes!("SomeFont.ttf");
 let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(font)
-    .build(&mut device, render_format);
+    .expect("Load font")
+    .build(&device, render_format);
 
 let section = Section {
     text: "Hello wgpu_glyph",
@@ -24,7 +25,7 @@ glyph_brush.queue(section);
 glyph_brush.queue(some_other_section);
 
 glyph_brush.draw_queued(
-    &mut device,
+    &device,
     &mut encoder,
     &frame.view,
     frame.width.round() as u32,

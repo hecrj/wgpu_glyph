@@ -39,7 +39,9 @@ fn main() -> Result<(), String> {
 
     // Prepare glyph_brush
     let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
+
     let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(inconsolata)
+        .expect("Load fonts")
         .depth_stencil_state(wgpu::DepthStencilStateDescriptor {
             format: wgpu::TextureFormat::Depth32Float,
             depth_write_enabled: true,

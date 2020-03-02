@@ -2,7 +2,7 @@ use core::hash::BuildHasher;
 
 use glyph_brush::delegate_glyph_brush_builder_fns;
 use glyph_brush::{rusttype, DefaultSectionHasher};
-use rusttype::{Font, SharedBytes};
+use rusttype::{Error, Font, SharedBytes};
 
 use super::GlyphBrush;
 
@@ -13,7 +13,9 @@ pub struct GlyphBrushBuilder<'a, D, H = DefaultSectionHasher> {
     depth: D,
 }
 
-impl<'a, H> From<glyph_brush::GlyphBrushBuilder<'a, H>> for GlyphBrushBuilder<'a, (), H> {
+impl<'a, H> From<glyph_brush::GlyphBrushBuilder<'a, H>>
+    for GlyphBrushBuilder<'a, (), H>
+{
     fn from(inner: glyph_brush::GlyphBrushBuilder<'a, H>) -> Self {
         GlyphBrushBuilder {
             inner,
@@ -27,23 +29,27 @@ impl<'a> GlyphBrushBuilder<'a, ()> {
     /// Specifies the default font data used to render glyphs.
     /// Referenced with `FontId(0)`, which is default.
     #[inline]
-    pub fn using_font_bytes<B: Into<SharedBytes<'a>>>(font_0_data: B) -> Self {
-        Self::using_font(Font::from_bytes(font_0_data).unwrap())
+    pub fn using_font_bytes<B: Into<SharedBytes<'a>>>(
+        font_0_data: B,
+    ) -> Result<Self, Error> {
+        let font = Font::from_bytes(font_0_data)?;
+
+        Ok(Self::using_font(font))
     }
 
     #[inline]
-    pub fn using_fonts_bytes<B, V>(font_data: V) -> Self
+    pub fn using_fonts_bytes<B, V>(font_data: V) -> Result<Self, Error>
     where
         B: Into<SharedBytes<'a>>,
         V: Into<Vec<B>>,
     {
-        Self::using_fonts(
-            font_data
-                .into()
-                .into_iter()
-                .map(|data| Font::from_bytes(data).unwrap())
-                .collect::<Vec<_>>(),
-        )
+        let fonts = font_data
+            .into()
+            .into_iter()
+            .map(Font::from_bytes)
+            .collect::<Result<Vec<Font>, Error>>()?;
+
+        Ok(Self::using_fonts(fonts))
     }
 
     /// Specifies the default font used to render glyphs.

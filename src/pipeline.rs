@@ -424,6 +424,7 @@ fn create_uniforms(
     })
 }
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct Instance {
     left_top: [f32; 3],
