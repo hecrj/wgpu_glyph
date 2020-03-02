@@ -28,8 +28,8 @@ glyph_brush.draw_queued(
     &device,
     &mut encoder,
     &frame.view,
-    frame.width.round() as u32,
-    frame.height.round() as u32,
+    frame.width,
+    frame.height,
 );
 
 device.get_queue().submit(&[encoder.finish()]);
