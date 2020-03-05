@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.0] - 2020-03-02
 ### Changed
 - `GlyphBrush::build` and `GlyphBrush::draw_queued*` methods take an immutable reference of a `wgpu::Device` now. [#29] [#30]
-- `GlyphBrush::using_font_bytes` and `GlyphBrush::using_fonts_bytes` return an error instead of panicking when the provided font cannot be loaded. [#31]
+- `GlyphBrush::using_font_bytes` and `GlyphBrush::using_fonts_bytes` return an error instead of panicking when the provided font cannot be loaded. [#27]
 
+[#27]: https://github.com/hecrj/wgpu_glyph/pull/27
 [#29]: https://github.com/hecrj/wgpu_glyph/pull/29
 [#30]: https://github.com/hecrj/wgpu_glyph/pull/30
-[#31]: https://github.com/hecrj/wgpu_glyph/pull/31
 
 
 ## [0.6.0] - 2019-11-24
