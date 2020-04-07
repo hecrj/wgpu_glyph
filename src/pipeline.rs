@@ -6,6 +6,7 @@ use cache::Cache;
 use glyph_brush::rusttype::{point, Rect};
 use std::marker::PhantomData;
 use std::mem;
+use zerocopy::AsBytes;
 
 pub struct Pipeline<Depth> {
     transform: wgpu::Buffer,
@@ -75,9 +76,7 @@ impl Pipeline<wgpu::DepthStencilStateDescriptor> {
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
-            &wgpu::TextureView,
-        >,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         transform: [f32; 16],
         region: Option<Region>,
     ) {
@@ -135,6 +134,7 @@ impl<Depth> Pipeline<Depth> {
 
         if instances.len() > self.supported_instances {
             self.instances = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("instances"),
                 size: mem::size_of::<Instance>() as u64
                     * instances.len() as u64,
                 usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
@@ -143,9 +143,10 @@ impl<Depth> Pipeline<Depth> {
             self.supported_instances = instances.len();
         }
 
-        let instance_buffer = device
-            .create_buffer_mapped(instances.len(), wgpu::BufferUsage::COPY_SRC)
-            .fill_from_slice(instances);
+        let instance_buffer = device.create_buffer_with_data(
+            instances.as_bytes(),
+            wgpu::BufferUsage::COPY_SRC,
+        );
 
         encoder.copy_buffer_to_buffer(
             &instance_buffer,
@@ -176,12 +177,10 @@ fn build<D>(
     cache_width: u32,
     cache_height: u32,
 ) -> Pipeline<D> {
-    let transform = device
-        .create_buffer_mapped(
-            16,
-            wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-        )
-        .fill_from_slice(&IDENTITY_MATRIX);
+    let transform = device.create_buffer_with_data(
+        IDENTITY_MATRIX.as_bytes(),
+        wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+    );
 
     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
         address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -192,30 +191,32 @@ fn build<D>(
         mipmap_filter: filter_mode,
         lod_min_clamp: 0.0,
         lod_max_clamp: 0.0,
-        compare_function: wgpu::CompareFunction::Always,
+        compare: wgpu::CompareFunction::Always,
     });
 
     let cache = Cache::new(device, cache_width, cache_height);
 
     let uniform_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Uniforms"),
             bindings: &[
-                wgpu::BindGroupLayoutBinding {
+                wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
                     ty: wgpu::BindingType::UniformBuffer { dynamic: false },
                 },
-                wgpu::BindGroupLayoutBinding {
+                wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler,
+                    ty: wgpu::BindingType::Sampler { comparison: false },
                 },
-                wgpu::BindGroupLayoutBinding {
+                wgpu::BindGroupLayoutEntry {
                     binding: 2,
                     visibility: wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::SampledTexture {
-                        multisampled: false,
                         dimension: wgpu::TextureViewDimension::D2,
+                        component_type: wgpu::TextureComponentType::Float,
+                        multisampled: false,
                     },
                 },
             ],
@@ -230,6 +231,7 @@ fn build<D>(
     );
 
     let instances = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("instances"),
         size: mem::size_of::<Instance>() as u64
             * Instance::INITIAL_AMOUNT as u64,
         usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
@@ -283,38 +285,40 @@ fn build<D>(
             write_mask: wgpu::ColorWrite::ALL,
         }],
         depth_stencil_state,
-        index_format: wgpu::IndexFormat::Uint16,
-        vertex_buffers: &[wgpu::VertexBufferDescriptor {
-            stride: mem::size_of::<Instance>() as u64,
-            step_mode: wgpu::InputStepMode::Instance,
-            attributes: &[
-                wgpu::VertexAttributeDescriptor {
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float3,
-                    offset: 0,
-                },
-                wgpu::VertexAttributeDescriptor {
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float2,
-                    offset: 4 * 3,
-                },
-                wgpu::VertexAttributeDescriptor {
-                    shader_location: 2,
-                    format: wgpu::VertexFormat::Float2,
-                    offset: 4 * (3 + 2),
-                },
-                wgpu::VertexAttributeDescriptor {
-                    shader_location: 3,
-                    format: wgpu::VertexFormat::Float2,
-                    offset: 4 * (3 + 2 + 2),
-                },
-                wgpu::VertexAttributeDescriptor {
-                    shader_location: 4,
-                    format: wgpu::VertexFormat::Float4,
-                    offset: 4 * (3 + 2 + 2 + 2),
-                },
-            ],
-        }],
+        vertex_state: wgpu::VertexStateDescriptor {
+            index_format: wgpu::IndexFormat::Uint16,
+            vertex_buffers: &[wgpu::VertexBufferDescriptor {
+                stride: mem::size_of::<Instance>() as u64,
+                step_mode: wgpu::InputStepMode::Instance,
+                attributes: &[
+                    wgpu::VertexAttributeDescriptor {
+                        shader_location: 0,
+                        format: wgpu::VertexFormat::Float3,
+                        offset: 0,
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        shader_location: 1,
+                        format: wgpu::VertexFormat::Float2,
+                        offset: 4 * 3,
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        shader_location: 2,
+                        format: wgpu::VertexFormat::Float2,
+                        offset: 4 * (3 + 2),
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        shader_location: 3,
+                        format: wgpu::VertexFormat::Float2,
+                        offset: 4 * (3 + 2 + 2),
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        shader_location: 4,
+                        format: wgpu::VertexFormat::Float4,
+                        offset: 4 * (3 + 2 + 2 + 2),
+                    },
+                ],
+            }],
+        },
         sample_count: 1,
         sample_mask: !0,
         alpha_to_coverage_enabled: false,
@@ -341,15 +345,16 @@ fn draw<D>(
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
     depth_stencil_attachment: Option<
-        wgpu::RenderPassDepthStencilAttachmentDescriptor<&wgpu::TextureView>,
+        wgpu::RenderPassDepthStencilAttachmentDescriptor,
     >,
     transform: [f32; 16],
     region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
-        let transform_buffer = device
-            .create_buffer_mapped(16, wgpu::BufferUsage::COPY_SRC)
-            .fill_from_slice(&transform[..]);
+        let transform_buffer = device.create_buffer_with_data(
+            transform.as_bytes(),
+            wgpu::BufferUsage::COPY_SRC,
+        );
 
         encoder.copy_buffer_to_buffer(
             &transform_buffer,
@@ -381,7 +386,7 @@ fn draw<D>(
 
     render_pass.set_pipeline(&pipeline.raw);
     render_pass.set_bind_group(0, &pipeline.uniforms, &[]);
-    render_pass.set_vertex_buffers(0, &[(&pipeline.instances, 0)]);
+    render_pass.set_vertex_buffer(0, &pipeline.instances, 0, 0);
 
     if let Some(region) = region {
         render_pass.set_scissor_rect(
@@ -403,6 +408,7 @@ fn create_uniforms(
     cache: &wgpu::TextureView,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Uniforms"),
         layout: layout,
         bindings: &[
             wgpu::Binding {
@@ -425,7 +431,7 @@ fn create_uniforms(
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, AsBytes)]
 pub struct Instance {
     left_top: [f32; 3],
     right_bottom: [f32; 2],

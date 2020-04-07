@@ -44,5 +44,7 @@ void main() {
     }
 
     f_color = color;
+
     gl_Position = transform * vec4(pos, left_top.z, 1.0);
+    gl_Position.y = -gl_Position.y;
 }

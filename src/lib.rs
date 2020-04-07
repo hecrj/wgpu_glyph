@@ -347,9 +347,7 @@ impl<'font, H: BuildHasher>
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
-            &wgpu::TextureView,
-        >,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         target_width: u32,
         target_height: u32,
     ) -> Result<(), String> {
@@ -379,9 +377,7 @@ impl<'font, H: BuildHasher>
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
-            &wgpu::TextureView,
-        >,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         transform: [f32; 16],
     ) -> Result<(), String> {
         self.process_queued(device, encoder);
@@ -414,9 +410,7 @@ impl<'font, H: BuildHasher>
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
-            &wgpu::TextureView,
-        >,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         transform: [f32; 16],
         region: Region,
     ) -> Result<(), String> {

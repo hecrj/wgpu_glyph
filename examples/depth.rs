@@ -5,23 +5,37 @@ const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 fn main() -> Result<(), String> {
     env_logger::init();
 
-    // Initialize GPU
-    let adapter = wgpu::Adapter::request(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::HighPerformance,
-        backends: wgpu::BackendBit::all(),
-    })
-    .expect("Request adapter");
-
-    let (mut device, mut queue) =
-        adapter.request_device(&wgpu::DeviceDescriptor {
-            extensions: wgpu::Extensions {
-                anisotropic_filtering: false,
-            },
-            limits: wgpu::Limits { max_bind_groups: 1 },
-        });
-
     // Open window and create a surface
     let event_loop = winit::event_loop::EventLoop::new();
+
+    let window = winit::window::WindowBuilder::new()
+        .with_resizable(false)
+        .build(&event_loop)
+        .unwrap();
+
+    let surface = wgpu::Surface::create(&window);
+
+    // Initialize GPU
+    let (device, queue) = futures::executor::block_on(async {
+        let adapter = wgpu::Adapter::request(
+            &wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: Some(&surface),
+            },
+            wgpu::BackendBit::all(),
+        )
+        .await
+        .expect("Request adapter");
+
+        adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                extensions: wgpu::Extensions {
+                    anisotropic_filtering: false,
+                },
+                limits: wgpu::Limits { max_bind_groups: 1 },
+            })
+            .await
+    });
 
     let window = winit::window::WindowBuilder::new()
         .with_resizable(false)
@@ -35,7 +49,7 @@ fn main() -> Result<(), String> {
     let mut new_size = None;
 
     let (mut swap_chain, mut depth_view) =
-        create_frame_views(&mut device, &surface, size);
+        create_frame_views(&device, &surface, size);
 
     // Prepare glyph_brush
     let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
@@ -71,7 +85,7 @@ fn main() -> Result<(), String> {
             winit::event::Event::RedrawRequested { .. } => {
                 if let Some(new_size) = new_size.take() {
                     let (new_swap_chain, new_depth_view) =
-                        create_frame_views(&mut device, &surface, new_size);
+                        create_frame_views(&device, &surface, new_size);
 
                     swap_chain = new_swap_chain;
                     depth_view = new_depth_view;
@@ -80,11 +94,14 @@ fn main() -> Result<(), String> {
 
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
-                    &wgpu::CommandEncoderDescriptor { todo: 0 },
+                    &wgpu::CommandEncoderDescriptor {
+                        label: Some("Redraw"),
+                    },
                 );
 
                 // Get the next frame
-                let frame = swap_chain.get_next_texture();
+                let frame =
+                    swap_chain.get_next_texture().expect("Get next frame");
 
                 // Clear frame
                 {
@@ -137,7 +154,7 @@ fn main() -> Result<(), String> {
                 // Draw all the text!
                 glyph_brush
                     .draw_queued(
-                        &mut device,
+                        &device,
                         &mut encoder,
                         &frame.view,
                         wgpu::RenderPassDepthStencilAttachmentDescriptor {
@@ -177,11 +194,12 @@ fn create_frame_views(
             format: FORMAT,
             width,
             height,
-            present_mode: wgpu::PresentMode::Vsync,
+            present_mode: wgpu::PresentMode::Mailbox,
         },
     );
 
     let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("Depth buffer"),
         size: wgpu::Extent3d {
             width,
             height,
