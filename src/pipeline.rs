@@ -134,7 +134,7 @@ impl<Depth> Pipeline<Depth> {
 
         if instances.len() > self.supported_instances {
             self.instances = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("instances"),
+                label: Some("wgpu_glyph::Pipeline instances"),
                 size: mem::size_of::<Instance>() as u64
                     * instances.len() as u64,
                 usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
@@ -198,7 +198,7 @@ fn build<D>(
 
     let uniform_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Uniforms"),
+            label: Some("wgpu_glyph::Pipeline uniforms"),
             bindings: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
@@ -231,7 +231,7 @@ fn build<D>(
     );
 
     let instances = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("instances"),
+        label: Some("wgpu_glyph::Pipeline instances"),
         size: mem::size_of::<Instance>() as u64
             * Instance::INITIAL_AMOUNT as u64,
         usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
@@ -408,7 +408,7 @@ fn create_uniforms(
     cache: &wgpu::TextureView,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("Uniforms"),
+        label: Some("wgpu_glyph::Pipeline uniforms"),
         layout: layout,
         bindings: &[
             wgpu::Binding {
