@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - `wgpu` dependency updated to `0.5`. [#33]
+- The Y axis has been flipped to match the new NDC sytem in `wgpu`. [#33]
 
 [#33]: https://github.com/hecrj/wgpu_glyph/pull/33
 
