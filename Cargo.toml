@@ -1,6 +1,6 @@
 [package]
 name = "wgpu_glyph"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Héctor Ramón Jiménez <hector0193@gmail.com>"]
 edition = "2018"
 description = "A fast text renderer for wgpu, powered by glyph_brush"
@@ -11,11 +11,12 @@ documentation = "https://docs.rs/wgpu_glyph"
 readme = "README.md"
 
 [dependencies]
-wgpu = "0.4"
+wgpu = "0.5"
 glyph_brush = "0.6"
 log = "0.4"
+zerocopy = "0.3"
 
 [dev-dependencies]
 env_logger = "0.7"
 winit = "0.22"
-raw-window-handle = "0.3"
+futures = "0.3"

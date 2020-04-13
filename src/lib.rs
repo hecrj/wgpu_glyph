@@ -347,9 +347,7 @@ impl<'font, H: BuildHasher>
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
-            &wgpu::TextureView,
-        >,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         target_width: u32,
         target_height: u32,
     ) -> Result<(), String> {
@@ -379,9 +377,7 @@ impl<'font, H: BuildHasher>
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
-            &wgpu::TextureView,
-        >,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         transform: [f32; 16],
     ) -> Result<(), String> {
         self.process_queued(device, encoder);
@@ -414,9 +410,7 @@ impl<'font, H: BuildHasher>
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor<
-            &wgpu::TextureView,
-        >,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         transform: [f32; 16],
         region: Region,
     ) -> Result<(), String> {
@@ -440,9 +434,9 @@ fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     [
         2.0 / width as f32, 0.0, 0.0, 0.0,
-        0.0, 2.0 / height as f32, 0.0, 0.0,
+        0.0, -2.0 / height as f32, 0.0, 0.0,
         0.0, 0.0, 1.0, 0.0,
-        -1.0, -1.0, 0.0, 1.0,
+        -1.0, 1.0, 0.0, 1.0,
     ]
 }
 
