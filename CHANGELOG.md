@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [0.8.0] - 2020-04-13
 ### Changed
 - `wgpu` dependency updated to `0.5`. [#33]
 - The Y axis has been flipped to match the new NDC sytem in `wgpu`. [#33]
@@ -95,7 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release! :tada:
 
 
-[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/hecrj/wgpu_glyph/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/hecrj/wgpu_glyph/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/hecrj/wgpu_glyph/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/hecrj/wgpu_glyph/compare/0.4.0...0.5.0
