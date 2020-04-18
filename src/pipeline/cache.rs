@@ -15,7 +15,6 @@ impl Cache {
     pub fn new(device: &wgpu::Device, width: u32, height: u32) -> Cache {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("wgpu_glyph::Cache"),
-            
             size: wgpu::Extent3d {
                 width,
                 height,
