@@ -41,7 +41,7 @@ impl Cache {
         size: [u16; 2],
         data: &[u8],
     ) {
-        let mut width = size[0] as usize;
+        let width = size[0] as usize;
         let height = size[1] as usize;
         let adjusted_width = multiple_of_256(height);
 
