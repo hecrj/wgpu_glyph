@@ -3,10 +3,19 @@ pub struct Cache {
     pub(super) view: wgpu::TextureView,
 }
 
+fn multiple_of_256(value: usize) -> usize {
+    if value % 256 == 0 {
+        value
+    } else {
+        (value / 256 + 1) * 256
+    }
+}
+
 impl Cache {
     pub fn new(device: &wgpu::Device, width: u32, height: u32) -> Cache {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("wgpu_glyph::Cache"),
+            
             size: wgpu::Extent3d {
                 width,
                 height,
@@ -33,14 +42,30 @@ impl Cache {
         size: [u16; 2],
         data: &[u8],
     ) {
-        let buffer =
-            device.create_buffer_with_data(data, wgpu::BufferUsage::COPY_SRC);
+        let mut width = size[0] as usize;
+        let height = size[1] as usize;
+        let adjusted_width = multiple_of_256(height);
+
+        let buffer = if width != adjusted_width {
+            // Allocate a new vector with the correct padding
+            let mut padded_data = vec![0; adjusted_width * height];
+            
+            // Copy into this vector
+            for row in 0 .. height {
+                padded_data[row * adjusted_width .. row * adjusted_width + width]
+                    .copy_from_slice(&data[row * width .. (row + 1) * width]); 
+            }
+
+            device.create_buffer_with_data(&padded_data, wgpu::BufferUsage::COPY_SRC)
+        } else {
+            device.create_buffer_with_data(data, wgpu::BufferUsage::COPY_SRC)
+        };
 
         encoder.copy_buffer_to_texture(
             wgpu::BufferCopyView {
                 buffer: &buffer,
                 offset: 0,
-                bytes_per_row: size[0] as u32,
+                bytes_per_row: adjusted_width as u32,
                 rows_per_image: size[1] as u32,
             },
             wgpu::TextureCopyView {
