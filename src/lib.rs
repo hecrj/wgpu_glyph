@@ -429,8 +429,8 @@ impl<'font, H: BuildHasher>
     }
 }
 
-// Helpers
-fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
+/// Helper function to generate a generate a transform matrix.
+pub fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     [
         2.0 / width as f32, 0.0, 0.0, 0.0,
