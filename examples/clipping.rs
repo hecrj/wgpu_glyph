@@ -152,7 +152,10 @@ fn main() -> Result<(), String> {
                         &device,
                         &mut encoder,
                         &frame.view,
-                        orthographic_projection(size.width, size.height),
+                        wgpu_glyph::orthographic_projection(
+                            size.width,
+                            size.height,
+                        ),
                         Region {
                             x: 40,
                             y: 105,
@@ -169,14 +172,4 @@ fn main() -> Result<(), String> {
             }
         }
     })
-}
-
-fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    [
-        2.0 / width as f32, 0.0, 0.0, 0.0,
-        0.0, -2.0 / height as f32, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        -1.0, 1.0, 0.0, 1.0,
-    ]
 }
