@@ -45,6 +45,21 @@ impl GlyphBrushBuilder<(), ()> {
 impl<F: Font, D, H: BuildHasher> GlyphBrushBuilder<D, F, H> {
     delegate_glyph_brush_builder_fns!(inner);
 
+    /// When multiple CPU cores are available spread rasterization work across
+    /// all cores.
+    ///
+    /// Significantly reduces worst case latency in multicore environments.
+    ///
+    /// # Platform-specific behaviour
+    ///
+    /// This option has no effect on wasm32.
+    pub fn draw_cache_multithread(mut self, multithread: bool) -> Self {
+        self.inner.draw_cache_builder =
+            self.inner.draw_cache_builder.multithread(multithread);
+
+        self
+    }
+
     /// Sets the texture filtering method.
     pub fn texture_filter_method(
         mut self,
