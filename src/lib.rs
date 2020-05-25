@@ -12,30 +12,30 @@ pub use region::Region;
 use pipeline::{Instance, Pipeline};
 
 pub use builder::GlyphBrushBuilder;
+pub use glyph_brush::ab_glyph;
 pub use glyph_brush::{
-    rusttype::{self, Font, Point, PositionedGlyph, Rect, Scale, SharedBytes},
-    BuiltInLineBreaker, FontId, FontMap, GlyphCruncher, GlyphPositioner,
-    HorizontalAlign, Layout, LineBreak, LineBreaker, OwnedSectionText,
-    OwnedVariedSection, PositionedGlyphIter, Section, SectionGeometry,
-    SectionText, VariedSection, VerticalAlign,
+    BuiltInLineBreaker, Extra, FontId, GlyphCruncher, GlyphPositioner,
+    HorizontalAlign, Layout, LineBreak, LineBreaker, Section, SectionGeometry,
+    SectionGlyph, SectionGlyphIter, SectionText, Text, VerticalAlign,
 };
 
+use ab_glyph::{Font, Rect};
 use core::hash::BuildHasher;
 use std::borrow::Cow;
 
-use glyph_brush::{BrushAction, BrushError, Color, DefaultSectionHasher};
+use glyph_brush::{BrushAction, BrushError, DefaultSectionHasher};
 use log::{log_enabled, warn};
 
 /// Object allowing glyph drawing, containing cache state. Manages glyph positioning cacheing,
 /// glyph draw caching & efficient GPU texture cache updating and re-sizing on demand.
 ///
 /// Build using a [`GlyphBrushBuilder`](struct.GlyphBrushBuilder.html).
-pub struct GlyphBrush<'font, Depth, H = DefaultSectionHasher> {
+pub struct GlyphBrush<Depth, F, H = DefaultSectionHasher> {
     pipeline: Pipeline<Depth>,
-    glyph_brush: glyph_brush::GlyphBrush<'font, Instance, H>,
+    glyph_brush: glyph_brush::GlyphBrush<Instance, Extra, F, H>,
 }
 
-impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
+impl<Depth, F: Font, H: BuildHasher> GlyphBrush<Depth, F, H> {
     /// Queues a section/layout to be drawn by the next call of
     /// [`draw_queued`](struct.GlyphBrush.html#method.draw_queued). Can be
     /// called multiple times to queue multiple sections for drawing.
@@ -44,7 +44,7 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
     #[inline]
     pub fn queue<'a, S>(&mut self, section: S)
     where
-        S: Into<Cow<'a, VariedSection<'a>>>,
+        S: Into<Cow<'a, Section<'a>>>,
     {
         self.glyph_brush.queue(section)
     }
@@ -65,7 +65,7 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
         custom_layout: &G,
     ) where
         G: GlyphPositioner,
-        S: Into<Cow<'a, VariedSection<'a>>>,
+        S: Into<Cow<'a, Section<'a>>>,
     {
         self.glyph_brush.queue_custom_layout(section, custom_layout)
     }
@@ -76,11 +76,11 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
     #[inline]
     pub fn queue_pre_positioned(
         &mut self,
-        glyphs: Vec<(PositionedGlyph<'font>, Color, FontId)>,
-        bounds: Rect<f32>,
-        z: f32,
+        glyphs: Vec<SectionGlyph>,
+        extra: Vec<Extra>,
+        bounds: Rect,
     ) {
-        self.glyph_brush.queue_pre_positioned(glyphs, bounds, z)
+        self.glyph_brush.queue_pre_positioned(glyphs, extra, bounds)
     }
 
     /// Retains the section in the cache as if it had been used in the last
@@ -94,7 +94,7 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
         section: S,
         custom_layout: &G,
     ) where
-        S: Into<Cow<'a, VariedSection<'a>>>,
+        S: Into<Cow<'a, Section<'a>>>,
         G: GlyphPositioner,
     {
         self.glyph_brush
@@ -109,11 +109,32 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
     #[inline]
     pub fn keep_cached<'a, S>(&mut self, section: S)
     where
-        S: Into<Cow<'a, VariedSection<'a>>>,
+        S: Into<Cow<'a, Section<'a>>>,
     {
         self.glyph_brush.keep_cached(section)
     }
 
+    /// Returns the available fonts.
+    ///
+    /// The `FontId` corresponds to the index of the font data.
+    #[inline]
+    pub fn fonts(&self) -> &[F] {
+        self.glyph_brush.fonts()
+    }
+
+    /// Adds an additional font to the one(s) initially added on build.
+    ///
+    /// Returns a new [`FontId`](struct.FontId.html) to reference this font.
+    pub fn add_font(&mut self, font: F) -> FontId {
+        self.glyph_brush.add_font(font)
+    }
+}
+
+impl<D, F, H> GlyphBrush<D, F, H>
+where
+    F: Font + Sync,
+    H: BuildHasher,
+{
     fn process_queued(
         &mut self,
         device: &wgpu::Device,
@@ -126,13 +147,13 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
         loop {
             brush_action = self.glyph_brush.process_queued(
                 |rect, tex_data| {
-                    let offset = [rect.min.x as u16, rect.min.y as u16];
+                    let offset = [rect.min[0] as u16, rect.min[1] as u16];
                     let size = [rect.width() as u16, rect.height() as u16];
 
                     pipeline
                         .update_cache(device, encoder, offset, size, tex_data);
                 },
-                Instance::from,
+                Instance::from_vertex,
             );
 
             match brush_action {
@@ -178,39 +199,14 @@ impl<'font, Depth, H: BuildHasher> GlyphBrush<'font, Depth, H> {
             BrushAction::ReDraw => {}
         };
     }
-
-    /// Returns the available fonts.
-    ///
-    /// The `FontId` corresponds to the index of the font data.
-    #[inline]
-    pub fn fonts(&self) -> &[Font<'_>] {
-        self.glyph_brush.fonts()
-    }
-
-    /// Adds an additional font to the one(s) initially added on build.
-    ///
-    /// Returns a new [`FontId`](struct.FontId.html) to reference this font.
-    pub fn add_font_bytes<'a: 'font, B: Into<SharedBytes<'a>>>(
-        &mut self,
-        font_data: B,
-    ) -> FontId {
-        self.glyph_brush.add_font_bytes(font_data)
-    }
-
-    /// Adds an additional font to the one(s) initially added on build.
-    ///
-    /// Returns a new [`FontId`](struct.FontId.html) to reference this font.
-    pub fn add_font<'a: 'font>(&mut self, font_data: Font<'a>) -> FontId {
-        self.glyph_brush.add_font(font_data)
-    }
 }
 
-impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
+impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     fn new(
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
-        raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
+        raw_builder: glyph_brush::GlyphBrushBuilder<F, H>,
     ) -> Self {
         let glyph_brush = raw_builder.build();
         let (cache_width, cache_height) = glyph_brush.texture_dimensions();
@@ -306,15 +302,15 @@ impl<'font, H: BuildHasher> GlyphBrush<'font, (), H> {
     }
 }
 
-impl<'font, H: BuildHasher>
-    GlyphBrush<'font, wgpu::DepthStencilStateDescriptor, H>
+impl<F: Font + Sync, H: BuildHasher>
+    GlyphBrush<wgpu::DepthStencilStateDescriptor, F, H>
 {
     fn new(
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
         depth_stencil_state: wgpu::DepthStencilStateDescriptor,
-        raw_builder: glyph_brush::GlyphBrushBuilder<'font, H>,
+        raw_builder: glyph_brush::GlyphBrushBuilder<F, H>,
     ) -> Self {
         let glyph_brush = raw_builder.build();
         let (cache_width, cache_height) = glyph_brush.texture_dimensions();
@@ -440,44 +436,42 @@ pub fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
     ]
 }
 
-impl<'font, D, H: BuildHasher> GlyphCruncher<'font>
-    for GlyphBrush<'font, D, H>
-{
-    #[inline]
-    fn pixel_bounds_custom_layout<'a, S, L>(
-        &mut self,
-        section: S,
-        custom_layout: &L,
-    ) -> Option<Rect<i32>>
-    where
-        L: GlyphPositioner + std::hash::Hash,
-        S: Into<Cow<'a, VariedSection<'a>>>,
-    {
-        self.glyph_brush
-            .pixel_bounds_custom_layout(section, custom_layout)
-    }
-
+impl<D, F: Font, H: BuildHasher> GlyphCruncher<F> for GlyphBrush<D, F, H> {
     #[inline]
     fn glyphs_custom_layout<'a, 'b, S, L>(
         &'b mut self,
         section: S,
         custom_layout: &L,
-    ) -> PositionedGlyphIter<'b, 'font>
+    ) -> SectionGlyphIter<'b>
     where
         L: GlyphPositioner + std::hash::Hash,
-        S: Into<Cow<'a, VariedSection<'a>>>,
+        S: Into<Cow<'a, Section<'a>>>,
     {
         self.glyph_brush
             .glyphs_custom_layout(section, custom_layout)
     }
 
     #[inline]
-    fn fonts(&self) -> &[Font<'font>] {
+    fn fonts(&self) -> &[F] {
         self.glyph_brush.fonts()
+    }
+
+    #[inline]
+    fn glyph_bounds_custom_layout<'a, S, L>(
+        &mut self,
+        section: S,
+        custom_layout: &L,
+    ) -> Option<Rect>
+    where
+        L: GlyphPositioner + std::hash::Hash,
+        S: Into<Cow<'a, Section<'a>>>,
+    {
+        self.glyph_brush
+            .glyph_bounds_custom_layout(section, custom_layout)
     }
 }
 
-impl<H> std::fmt::Debug for GlyphBrush<'_, H> {
+impl<F, H> std::fmt::Debug for GlyphBrush<F, H> {
     #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "GlyphBrush")

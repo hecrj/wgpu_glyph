@@ -1,8 +1,9 @@
-use wgpu_glyph::{GlyphBrushBuilder, Scale, Section};
+use std::error::Error;
+use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text};
 
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 
-fn main() -> Result<(), String> {
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     // Open window and create a surface
@@ -52,10 +53,11 @@ fn main() -> Result<(), String> {
         create_frame_views(&device, &surface, size);
 
     // Prepare glyph_brush
-    let inconsolata: &[u8] = include_bytes!("Inconsolata-Regular.ttf");
+    let inconsolata = ab_glyph::FontArc::try_from_slice(include_bytes!(
+        "Inconsolata-Regular.ttf"
+    ))?;
 
-    let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(inconsolata)
-        .expect("Load fonts")
+    let mut glyph_brush = GlyphBrushBuilder::using_font(inconsolata)
         .depth_stencil_state(wgpu::DepthStencilStateDescriptor {
             format: wgpu::TextureFormat::Depth32Float,
             depth_write_enabled: true,
@@ -130,10 +132,11 @@ fn main() -> Result<(), String> {
                 // Depth buffer will make it appear on top.
                 glyph_brush.queue(Section {
                     screen_position: (30.0, 30.0),
-                    text: "On top",
-                    scale: Scale::uniform(95.0),
-                    color: [0.8, 0.8, 0.8, 1.0],
-                    z: 0.9,
+                    text: vec![Text::default()
+                        .with_text("On top")
+                        .with_scale(95.0)
+                        .with_color([0.8, 0.8, 0.8, 1.0])
+                        .with_z(0.9)],
                     ..Section::default()
                 });
 
@@ -142,12 +145,15 @@ fn main() -> Result<(), String> {
                 // previous queued text.
                 glyph_brush.queue(Section {
                     bounds: (size.width as f32, size.height as f32),
-                    text: &include_str!("lipsum.txt")
-                        .replace("\n\n", "")
-                        .repeat(10),
-                    scale: Scale::uniform(30.0),
-                    color: [0.05, 0.05, 0.1, 1.0],
-                    z: 0.2,
+                    text: vec![Text::default()
+                        .with_text(
+                            &include_str!("lipsum.txt")
+                                .replace("\n\n", "")
+                                .repeat(10),
+                        )
+                        .with_scale(30.0)
+                        .with_color([0.05, 0.05, 0.1, 1.0])
+                        .with_z(0.2)],
                     ..Section::default()
                 });
 

@@ -3,7 +3,7 @@ mod cache;
 use crate::Region;
 use cache::Cache;
 
-use glyph_brush::rusttype::{point, Rect};
+use glyph_brush::ab_glyph::{point, Rect};
 use std::marker::PhantomData;
 use std::mem;
 use zerocopy::AsBytes;
@@ -442,19 +442,15 @@ pub struct Instance {
 
 impl Instance {
     const INITIAL_AMOUNT: usize = 50_000;
-}
 
-impl From<glyph_brush::GlyphVertex> for Instance {
-    #[inline]
-    fn from(vertex: glyph_brush::GlyphVertex) -> Instance {
-        let glyph_brush::GlyphVertex {
+    pub fn from_vertex(
+        glyph_brush::GlyphVertex {
             mut tex_coords,
             pixel_coords,
             bounds,
-            color,
-            z,
-        } = vertex;
-
+            extra,
+        }: glyph_brush::GlyphVertex,
+    ) -> Instance {
         let gl_bounds = bounds;
 
         let mut gl_rect = Rect {
@@ -492,11 +488,11 @@ impl From<glyph_brush::GlyphVertex> for Instance {
         }
 
         Instance {
-            left_top: [gl_rect.min.x, gl_rect.max.y, z],
+            left_top: [gl_rect.min.x, gl_rect.max.y, extra.z],
             right_bottom: [gl_rect.max.x, gl_rect.min.y],
             tex_left_top: [tex_coords.min.x, tex_coords.max.y],
             tex_right_bottom: [tex_coords.max.x, tex_coords.min.y],
-            color,
+            color: extra.color,
         }
     }
 }
