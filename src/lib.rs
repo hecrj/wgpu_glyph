@@ -30,7 +30,7 @@ use log::{log_enabled, warn};
 /// glyph draw caching & efficient GPU texture cache updating and re-sizing on demand.
 ///
 /// Build using a [`GlyphBrushBuilder`](struct.GlyphBrushBuilder.html).
-pub struct GlyphBrush<Depth, F, H = DefaultSectionHasher> {
+pub struct GlyphBrush<Depth, F = ab_glyph::FontArc, H = DefaultSectionHasher> {
     pipeline: Pipeline<Depth>,
     glyph_brush: glyph_brush::GlyphBrush<Instance, Extra, F, H>,
 }
