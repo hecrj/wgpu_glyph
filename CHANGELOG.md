@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - 2020-04-29
+### Added
+- `orthographic_projection` helper to easily build a projection matrix. [#39]
+
+### Changed
+- Updated `glyph_brush` to `0.7`. [#43]
+
+[#39]: https://github.com/hecrj/wgpu_glyph/pull/39
+[#43]: https://github.com/hecrj/wgpu_glyph/pull/43
 
 
 ## [0.8.0] - 2020-04-13
@@ -98,7 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release! :tada:
 
 
-[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.9.0...HEAD
+[0.9.0]: https://github.com/hecrj/wgpu_glyph/compare/0.8.0...0.9.0
 [0.8.0]: https://github.com/hecrj/wgpu_glyph/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/hecrj/wgpu_glyph/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/hecrj/wgpu_glyph/compare/0.5.0...0.6.0
