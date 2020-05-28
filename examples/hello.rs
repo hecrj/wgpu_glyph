@@ -123,8 +123,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 glyph_brush.queue(Section {
                     screen_position: (30.0, 30.0),
                     bounds: (size.width as f32, size.height as f32),
-                    text: vec![Text::default()
-                        .with_text("Hello wgpu_glyph!")
+                    text: vec![Text::new("Hello wgpu_glyph!")
                         .with_color([0.0, 0.0, 0.0, 1.0])
                         .with_scale(40.0)],
                     ..Section::default()
@@ -133,8 +132,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 glyph_brush.queue(Section {
                     screen_position: (30.0, 90.0),
                     bounds: (size.width as f32, size.height as f32),
-                    text: vec![Text::default()
-                        .with_text("Hello wgpu_glyph!")
+                    text: vec![Text::new("Hello wgpu_glyph!")
                         .with_color([1.0, 1.0, 1.0, 1.0])
                         .with_scale(40.0)],
                     ..Section::default()
