@@ -9,20 +9,21 @@ A fast text renderer for [wgpu](https://github.com/gfx-rs/wgpu), powered by
 [glyph_brush](https://github.com/alexheretic/glyph-brush/tree/master/glyph-brush)
 
 ```rust
-use wgpu_glyph::{Section, GlyphBrushBuilder};
+use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text};
 
-let font: &[u8] = include_bytes!("SomeFont.ttf");
-let mut glyph_brush = GlyphBrushBuilder::using_font_bytes(font)
-    .expect("Load font")
+let font = ab_glyph::FontArc::try_from_slice(include_bytes!("SomeFont.ttf"))
+    .expect("Load font");
+
+let mut glyph_brush = GlyphBrushBuilder::using_font(font)
     .build(&device, render_format);
 
 let section = Section {
-    text: "Hello wgpu_glyph",
-    ..Section::default() // color, position, etc
+    screen_position: (10.0, 10.0),
+    text: vec![Text::new("Hello wgpu_glyph")],
+    ..Section::default()
 };
 
 glyph_brush.queue(section);
-glyph_brush.queue(some_other_section);
 
 glyph_brush.draw_queued(
     &device,
