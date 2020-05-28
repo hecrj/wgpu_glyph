@@ -50,6 +50,8 @@ impl<F: Font, D, H: BuildHasher> GlyphBrushBuilder<D, F, H> {
     ///
     /// Significantly reduces worst case latency in multicore environments.
     ///
+    /// By default, this feature is __enabled__.
+    ///
     /// # Platform-specific behaviour
     ///
     /// This option has no effect on wasm32.
