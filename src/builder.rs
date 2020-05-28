@@ -1,22 +1,22 @@
 use core::hash::BuildHasher;
 
+use glyph_brush::ab_glyph::Font;
 use glyph_brush::delegate_glyph_brush_builder_fns;
-use glyph_brush::{rusttype, DefaultSectionHasher};
-use rusttype::{Error, Font, SharedBytes};
+use glyph_brush::DefaultSectionHasher;
 
 use super::GlyphBrush;
 
 /// Builder for a [`GlyphBrush`](struct.GlyphBrush.html).
-pub struct GlyphBrushBuilder<'a, D, H = DefaultSectionHasher> {
-    inner: glyph_brush::GlyphBrushBuilder<'a, H>,
+pub struct GlyphBrushBuilder<D, F, H = DefaultSectionHasher> {
+    inner: glyph_brush::GlyphBrushBuilder<F, H>,
     texture_filter_method: wgpu::FilterMode,
     depth: D,
 }
 
-impl<'a, H> From<glyph_brush::GlyphBrushBuilder<'a, H>>
-    for GlyphBrushBuilder<'a, (), H>
+impl<F, H> From<glyph_brush::GlyphBrushBuilder<F, H>>
+    for GlyphBrushBuilder<(), F, H>
 {
-    fn from(inner: glyph_brush::GlyphBrushBuilder<'a, H>) -> Self {
+    fn from(inner: glyph_brush::GlyphBrushBuilder<F, H>) -> Self {
         GlyphBrushBuilder {
             inner,
             texture_filter_method: wgpu::FilterMode::Linear,
@@ -25,41 +25,15 @@ impl<'a, H> From<glyph_brush::GlyphBrushBuilder<'a, H>>
     }
 }
 
-impl<'a> GlyphBrushBuilder<'a, ()> {
-    /// Specifies the default font data used to render glyphs.
-    /// Referenced with `FontId(0)`, which is default.
-    #[inline]
-    pub fn using_font_bytes<B: Into<SharedBytes<'a>>>(
-        font_0_data: B,
-    ) -> Result<Self, Error> {
-        let font = Font::from_bytes(font_0_data)?;
-
-        Ok(Self::using_font(font))
-    }
-
-    #[inline]
-    pub fn using_fonts_bytes<B, V>(font_data: V) -> Result<Self, Error>
-    where
-        B: Into<SharedBytes<'a>>,
-        V: Into<Vec<B>>,
-    {
-        let fonts = font_data
-            .into()
-            .into_iter()
-            .map(Font::from_bytes)
-            .collect::<Result<Vec<Font>, Error>>()?;
-
-        Ok(Self::using_fonts(fonts))
-    }
-
+impl GlyphBrushBuilder<(), ()> {
     /// Specifies the default font used to render glyphs.
     /// Referenced with `FontId(0)`, which is default.
     #[inline]
-    pub fn using_font(font_0: Font<'a>) -> Self {
-        Self::using_fonts(vec![font_0])
+    pub fn using_font<F: Font>(font: F) -> GlyphBrushBuilder<(), F> {
+        Self::using_fonts(vec![font])
     }
 
-    pub fn using_fonts<V: Into<Vec<Font<'a>>>>(fonts: V) -> Self {
+    pub fn using_fonts<F: Font>(fonts: Vec<F>) -> GlyphBrushBuilder<(), F> {
         GlyphBrushBuilder {
             inner: glyph_brush::GlyphBrushBuilder::using_fonts(fonts),
             texture_filter_method: wgpu::FilterMode::Linear,
@@ -68,8 +42,25 @@ impl<'a> GlyphBrushBuilder<'a, ()> {
     }
 }
 
-impl<'a, D, H: BuildHasher> GlyphBrushBuilder<'a, D, H> {
+impl<F: Font, D, H: BuildHasher> GlyphBrushBuilder<D, F, H> {
     delegate_glyph_brush_builder_fns!(inner);
+
+    /// When multiple CPU cores are available spread rasterization work across
+    /// all cores.
+    ///
+    /// Significantly reduces worst case latency in multicore environments.
+    ///
+    /// By default, this feature is __enabled__.
+    ///
+    /// # Platform-specific behaviour
+    ///
+    /// This option has no effect on wasm32.
+    pub fn draw_cache_multithread(mut self, multithread: bool) -> Self {
+        self.inner.draw_cache_builder =
+            self.inner.draw_cache_builder.multithread(multithread);
+
+        self
+    }
 
     /// Sets the texture filtering method.
     pub fn texture_filter_method(
@@ -90,7 +81,7 @@ impl<'a, D, H: BuildHasher> GlyphBrushBuilder<'a, D, H> {
     pub fn section_hasher<T: BuildHasher>(
         self,
         section_hasher: T,
-    ) -> GlyphBrushBuilder<'a, D, T> {
+    ) -> GlyphBrushBuilder<D, F, T> {
         GlyphBrushBuilder {
             inner: self.inner.section_hasher(section_hasher),
             texture_filter_method: self.texture_filter_method,
@@ -102,7 +93,7 @@ impl<'a, D, H: BuildHasher> GlyphBrushBuilder<'a, D, H> {
     pub fn depth_stencil_state(
         self,
         depth_stencil_state: wgpu::DepthStencilStateDescriptor,
-    ) -> GlyphBrushBuilder<'a, wgpu::DepthStencilStateDescriptor, H> {
+    ) -> GlyphBrushBuilder<wgpu::DepthStencilStateDescriptor, F, H> {
         GlyphBrushBuilder {
             inner: self.inner,
             texture_filter_method: self.texture_filter_method,
@@ -111,15 +102,15 @@ impl<'a, D, H: BuildHasher> GlyphBrushBuilder<'a, D, H> {
     }
 }
 
-impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, (), H> {
+impl<F: Font + Sync, H: BuildHasher> GlyphBrushBuilder<(), F, H> {
     /// Builds a `GlyphBrush` using the given `wgpu::Device` that can render
     /// text for texture views with the given `render_format`.
     pub fn build(
         self,
         device: &wgpu::Device,
         render_format: wgpu::TextureFormat,
-    ) -> GlyphBrush<'a, (), H> {
-        GlyphBrush::<(), H>::new(
+    ) -> GlyphBrush<(), F, H> {
+        GlyphBrush::<(), F, H>::new(
             device,
             self.texture_filter_method,
             render_format,
@@ -128,8 +119,8 @@ impl<'a, H: BuildHasher> GlyphBrushBuilder<'a, (), H> {
     }
 }
 
-impl<'a, H: BuildHasher>
-    GlyphBrushBuilder<'a, wgpu::DepthStencilStateDescriptor, H>
+impl<F: Font + Sync, H: BuildHasher>
+    GlyphBrushBuilder<wgpu::DepthStencilStateDescriptor, F, H>
 {
     /// Builds a `GlyphBrush` using the given `wgpu::Device` that can render
     /// text for texture views with the given `render_format`.
@@ -137,8 +128,8 @@ impl<'a, H: BuildHasher>
         self,
         device: &wgpu::Device,
         render_format: wgpu::TextureFormat,
-    ) -> GlyphBrush<'a, wgpu::DepthStencilStateDescriptor, H> {
-        GlyphBrush::<wgpu::DepthStencilStateDescriptor, H>::new(
+    ) -> GlyphBrush<wgpu::DepthStencilStateDescriptor, F, H> {
+        GlyphBrush::<wgpu::DepthStencilStateDescriptor, F, H>::new(
             device,
             self.texture_filter_method,
             render_format,
