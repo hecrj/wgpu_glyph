@@ -424,7 +424,7 @@ fn create_uniforms(
             },
             wgpu::Binding {
                 binding: 2,
-                resource: wgpu::BindingResource::TextureView(cache),
+                resource: wgpu::BindingResource::TextureView { view: cache, read_only_depth_stencil: false }
             },
         ],
     })
