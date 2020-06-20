@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build(&event_loop)
         .unwrap();
 
-    let instance = wgpu::Instance::new();
+    let instance = wgpu::Instance::new(wgpu::BackendBit::all());
     let surface = unsafe { instance.create_surface(&window) };
 
     // Initialize GPU
@@ -23,7 +23,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 compatible_surface: Some(&surface),
             },
             wgpu::UnsafeExtensions::disallow(),
-            wgpu::BackendBit::all(),
         )
         .await
         .expect("Request adapter");
