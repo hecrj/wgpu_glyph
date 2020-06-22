@@ -111,13 +111,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 wgpu::RenderPassColorAttachmentDescriptor {
                                     attachment: &frame.view,
                                     resolve_target: None,
-                                    load_op: wgpu::LoadOp::Clear,
-                                    store_op: wgpu::StoreOp::Store,
-                                    clear_color: wgpu::Color {
-                                        r: 0.4,
-                                        g: 0.4,
-                                        b: 0.4,
-                                        a: 1.0,
+                                    ops: wgpu::Operations {
+                                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                                            r: 0.4,
+                                            g: 0.4,
+                                            b: 0.4,
+                                            a: 1.0,
+                                        }),
+                                        store: true,
                                     },
                                 },
                             ],
@@ -163,14 +164,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &frame.view,
                         wgpu::RenderPassDepthStencilAttachmentDescriptor {
                             attachment: &depth_view,
-                            depth_load_op: wgpu::LoadOp::Clear,
-                            depth_store_op: wgpu::StoreOp::Store,
-                            depth_read_only: false,
-                            stencil_load_op: wgpu::LoadOp::Clear,
-                            stencil_store_op: wgpu::StoreOp::Store,
-                            stencil_read_only: false,
-                            clear_depth: -1.0,
-                            clear_stencil: 0,
+                            depth_ops: Some(wgpu::Operations {
+                                load: wgpu::LoadOp::Clear(-1.0),
+                                store: true,
+                            }),
+                            stencil_ops: Some(wgpu::Operations {
+                                load: wgpu::LoadOp::Clear(0),
+                                store: true,
+                            }),
                         },
                         size.width,
                         size.height,

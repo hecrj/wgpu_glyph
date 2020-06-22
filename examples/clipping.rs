@@ -110,13 +110,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 wgpu::RenderPassColorAttachmentDescriptor {
                                     attachment: &frame.view,
                                     resolve_target: None,
-                                    load_op: wgpu::LoadOp::Clear,
-                                    store_op: wgpu::StoreOp::Store,
-                                    clear_color: wgpu::Color {
-                                        r: 0.4,
-                                        g: 0.4,
-                                        b: 0.4,
-                                        a: 1.0,
+                                    ops: wgpu::Operations {
+                                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                                            r: 0.4,
+                                            g: 0.4,
+                                            b: 0.4,
+                                            a: 1.0,
+                                        }),
+                                        store: true,
                                     },
                                 },
                             ],

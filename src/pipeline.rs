@@ -204,9 +204,7 @@ fn build<D>(
                     wgpu::ShaderStage::VERTEX,
                     wgpu::BindingType::UniformBuffer {
                         dynamic: false,
-                        min_binding_size: wgpu::NonZeroBufferAddress::new(
-                            mem::size_of::<[f32; 16]>() as u64
-                        )
+                        min_binding_size: wgpu::BufferSize::new(mem::size_of::<[f32; 16]>() as u64)
                     },
                 ),
                 wgpu::BindGroupLayoutEntry::new(
@@ -373,13 +371,9 @@ fn draw<D>(
             color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                 attachment: target,
                 resolve_target: None,
-                load_op: wgpu::LoadOp::Load,
-                store_op: wgpu::StoreOp::Store,
-                clear_color: wgpu::Color {
-                    r: 0.0,
-                    g: 0.0,
-                    b: 0.0,
-                    a: 0.0,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Load,
+                    store: true,
                 },
             }],
             depth_stencil_attachment,
