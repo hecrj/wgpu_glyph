@@ -24,7 +24,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
             },
-            wgpu::UnsafeFeatures::disallow(),
         )
         .await
         .expect("Request adapter");
