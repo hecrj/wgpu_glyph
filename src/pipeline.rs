@@ -198,7 +198,7 @@ fn build<D>(
     let uniform_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("wgpu_glyph::Pipeline uniforms"),
-            bindings: &[
+            entries: &[
                 wgpu::BindGroupLayoutEntry::new(
                     0,
                     wgpu::ShaderStage::VERTEX,
@@ -242,6 +242,7 @@ fn build<D>(
 
     let layout =
         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            push_constant_ranges: &[],
             bind_group_layouts: &[&uniform_layout],
         });
 
@@ -405,16 +406,16 @@ fn create_uniforms(
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("wgpu_glyph::Pipeline uniforms"),
         layout: layout,
-        bindings: &[
-            wgpu::Binding {
+        entries: &[
+            wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer(transform.slice(..)),
             },
-            wgpu::Binding {
+            wgpu::BindGroupEntry {
                 binding: 1,
                 resource: wgpu::BindingResource::Sampler(sampler),
             },
-            wgpu::Binding {
+            wgpu::BindGroupEntry {
                 binding: 2,
                 resource: wgpu::BindingResource::TextureView(cache),
             },
