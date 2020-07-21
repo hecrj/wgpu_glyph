@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 // Get the next frame
                 let frame = swap_chain
-                    .get_next_frame()
+                    .get_current_frame()
                     .expect("Get next frame")
                     .output;
 
