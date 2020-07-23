@@ -4,6 +4,7 @@ use crate::Region;
 use cache::Cache;
 
 use glyph_brush::ab_glyph::{point, Rect};
+use std::borrow::Cow::Borrowed;
 use std::marker::PhantomData;
 use std::mem;
 use zerocopy::AsBytes;
@@ -197,8 +198,8 @@ fn build<D>(
 
     let uniform_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("wgpu_glyph::Pipeline uniforms"),
-            entries: &[
+            label: Some(Borrowed("wgpu_glyph::Pipeline uniforms")),
+            entries: Borrowed(&[
                 wgpu::BindGroupLayoutEntry::new(
                     0,
                     wgpu::ShaderStage::VERTEX,
@@ -221,7 +222,7 @@ fn build<D>(
                         multisampled: false,
                     },
                 ),
-            ],
+            ]),
         });
 
     let uniforms = create_uniforms(
@@ -242,8 +243,8 @@ fn build<D>(
 
     let layout =
         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            push_constant_ranges: &[],
-            bind_group_layouts: &[&uniform_layout],
+            push_constant_ranges: Borrowed(&[]),
+            bind_group_layouts: Borrowed(&[&uniform_layout]),
         });
 
     let vs_module
@@ -256,11 +257,11 @@ fn build<D>(
         layout: &layout,
         vertex_stage: wgpu::ProgrammableStageDescriptor {
             module: &vs_module,
-            entry_point: "main",
+            entry_point: Borrowed("main"),
         },
         fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
             module: &fs_module,
-            entry_point: "main",
+            entry_point: Borrowed("main"),
         }),
         rasterization_state: Some(wgpu::RasterizationStateDescriptor {
             front_face: wgpu::FrontFace::Cw,
@@ -270,7 +271,7 @@ fn build<D>(
             depth_bias_clamp: 0.0,
         }),
         primitive_topology: wgpu::PrimitiveTopology::TriangleStrip,
-        color_states: &[wgpu::ColorStateDescriptor {
+        color_states: Borrowed(&[wgpu::ColorStateDescriptor {
             format: render_format,
             color_blend: wgpu::BlendDescriptor {
                 src_factor: wgpu::BlendFactor::SrcAlpha,
@@ -283,14 +284,14 @@ fn build<D>(
                 operation: wgpu::BlendOperation::Add,
             },
             write_mask: wgpu::ColorWrite::ALL,
-        }],
+        }]),
         depth_stencil_state,
         vertex_state: wgpu::VertexStateDescriptor {
             index_format: wgpu::IndexFormat::Uint16,
-            vertex_buffers: &[wgpu::VertexBufferDescriptor {
+            vertex_buffers: Borrowed(&[wgpu::VertexBufferDescriptor {
                 stride: mem::size_of::<Instance>() as u64,
                 step_mode: wgpu::InputStepMode::Instance,
-                attributes: &[
+                attributes: Borrowed(&[
                     wgpu::VertexAttributeDescriptor {
                         shader_location: 0,
                         format: wgpu::VertexFormat::Float3,
@@ -316,8 +317,8 @@ fn build<D>(
                         format: wgpu::VertexFormat::Float4,
                         offset: 4 * (3 + 2 + 2 + 2),
                     },
-                ],
-            }],
+                ]),
+            }]),
         },
         sample_count: 1,
         sample_mask: !0,
@@ -369,14 +370,14 @@ fn draw<D>(
 
     let mut render_pass =
         encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+            color_attachments: Borrowed(&[wgpu::RenderPassColorAttachmentDescriptor {
                 attachment: target,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Load,
                     store: true,
                 },
-            }],
+            }]),
             depth_stencil_attachment,
         });
 
@@ -404,9 +405,9 @@ fn create_uniforms(
     cache: &wgpu::TextureView,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("wgpu_glyph::Pipeline uniforms"),
+        label: Some(Borrowed("wgpu_glyph::Pipeline uniforms")),
         layout: layout,
-        entries: &[
+        entries: Borrowed(&[
             wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer(transform.slice(..)),
@@ -419,7 +420,7 @@ fn create_uniforms(
                 binding: 2,
                 resource: wgpu::BindingResource::TextureView(cache),
             },
-        ],
+        ]),
     })
 }
 
