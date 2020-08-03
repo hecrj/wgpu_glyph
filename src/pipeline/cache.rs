@@ -1,3 +1,6 @@
+use std::borrow::Cow::Borrowed;
+use wgpu::util::DeviceExt;
+
 pub struct Cache {
     texture: wgpu::Texture,
     pub(super) view: wgpu::TextureView,
@@ -6,7 +9,7 @@ pub struct Cache {
 impl Cache {
     pub fn new(device: &wgpu::Device, width: u32, height: u32) -> Cache {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("wgpu_glyph::Cache"),
+            label: Some(Borrowed("wgpu_glyph::Cache")),
             size: wgpu::Extent3d {
                 width,
                 height,
@@ -48,7 +51,11 @@ impl Cache {
             padded_data[row * padded_width .. row * padded_width + width]
                 .copy_from_slice(&data[row * width .. (row + 1) * width])
         }
-        let buffer = device.create_buffer_with_data(&padded_data, wgpu::BufferUsage::COPY_SRC);
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: &padded_data,
+            usage: wgpu::BufferUsage::COPY_SRC,
+        });
 
         encoder.copy_buffer_to_texture(
             wgpu::BufferCopyView {

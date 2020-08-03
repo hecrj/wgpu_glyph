@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
                     &wgpu::CommandEncoderDescriptor {
-                        label: Some("Redraw"),
+                        label: Some(Borrowed("Redraw")),
                     },
                 );
 
@@ -206,7 +206,7 @@ fn create_frame_views(
     );
 
     let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("Depth buffer"),
+        label: Some(Borrowed("Depth buffer")),
         size: wgpu::Extent3d {
             width,
             height,

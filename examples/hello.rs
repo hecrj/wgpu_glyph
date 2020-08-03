@@ -92,7 +92,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
                     &wgpu::CommandEncoderDescriptor {
-                        label: Some("Redraw"),
+                        label: Some(Borrowed("Redraw")),
                     },
                 );
 

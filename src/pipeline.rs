@@ -8,6 +8,7 @@ use std::borrow::Cow::Borrowed;
 use std::marker::PhantomData;
 use std::mem;
 use zerocopy::AsBytes;
+use wgpu::util::DeviceExt;
 
 pub struct Pipeline<Depth> {
     transform: wgpu::Buffer,
@@ -135,7 +136,7 @@ impl<Depth> Pipeline<Depth> {
 
         if instances.len() > self.supported_instances {
             self.instances = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("wgpu_glyph::Pipeline instances"),
+                label: Some(Borrowed("wgpu_glyph::Pipeline instances")),
                 size: mem::size_of::<Instance>() as u64
                     * instances.len() as u64,
                 usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
@@ -145,10 +146,11 @@ impl<Depth> Pipeline<Depth> {
             self.supported_instances = instances.len();
         }
 
-        let instance_buffer = device.create_buffer_with_data(
-            instances.as_bytes(),
-            wgpu::BufferUsage::COPY_SRC,
-        );
+        let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: instances.as_bytes(),
+            usage: wgpu::BufferUsage::COPY_SRC,
+        });
 
         encoder.copy_buffer_to_buffer(
             &instance_buffer,
@@ -179,10 +181,11 @@ fn build<D>(
     cache_width: u32,
     cache_height: u32,
 ) -> Pipeline<D> {
-    let transform = device.create_buffer_with_data(
-        IDENTITY_MATRIX.as_bytes(),
-        wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-    );
+    let transform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: None,
+        contents: IDENTITY_MATRIX.as_bytes(),
+        usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+    });
 
     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
         address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -234,7 +237,7 @@ fn build<D>(
     );
 
     let instances = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("wgpu_glyph::Pipeline instances"),
+        label: Some(Borrowed("wgpu_glyph::Pipeline instances")),
         size: mem::size_of::<Instance>() as u64
             * Instance::INITIAL_AMOUNT as u64,
         usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
@@ -266,9 +269,7 @@ fn build<D>(
         rasterization_state: Some(wgpu::RasterizationStateDescriptor {
             front_face: wgpu::FrontFace::Cw,
             cull_mode: wgpu::CullMode::None,
-            depth_bias: 0,
-            depth_bias_slope_scale: 0.0,
-            depth_bias_clamp: 0.0,
+            ..Default::default()
         }),
         primitive_topology: wgpu::PrimitiveTopology::TriangleStrip,
         color_states: Borrowed(&[wgpu::ColorStateDescriptor {
@@ -352,10 +353,11 @@ fn draw<D>(
     region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
-        let transform_buffer = device.create_buffer_with_data(
-            transform.as_bytes(),
-            wgpu::BufferUsage::COPY_SRC,
-        );
+        let transform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: transform.as_bytes(),
+            usage: wgpu::BufferUsage::COPY_SRC,
+        });
 
         encoder.copy_buffer_to_buffer(
             &transform_buffer,
