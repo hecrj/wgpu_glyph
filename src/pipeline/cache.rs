@@ -1,4 +1,3 @@
-use std::borrow::Cow::Borrowed;
 use wgpu::util::DeviceExt;
 
 pub struct Cache {
@@ -9,7 +8,7 @@ pub struct Cache {
 impl Cache {
     pub fn new(device: &wgpu::Device, width: u32, height: u32) -> Cache {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some(Borrowed("wgpu_glyph::Cache")),
+            label: Some("wgpu_glyph::Cache"),
             size: wgpu::Extent3d {
                 width,
                 height,
@@ -22,7 +21,7 @@ impl Cache {
             sample_count: 1,
         });
 
-        let view = texture.create_default_view();
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         Cache { texture, view }
     }

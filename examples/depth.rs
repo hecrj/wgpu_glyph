@@ -1,4 +1,3 @@
-use std::borrow::Cow::Borrowed;
 use std::error::Error;
 use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text};
 
@@ -58,10 +57,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             format: wgpu::TextureFormat::Depth32Float,
             depth_write_enabled: true,
             depth_compare: wgpu::CompareFunction::Greater,
-            stencil_front: wgpu::StencilStateFaceDescriptor::IGNORE,
-            stencil_back: wgpu::StencilStateFaceDescriptor::IGNORE,
-            stencil_read_mask: 0,
-            stencil_write_mask: 0,
+            stencil: wgpu::StencilStateDescriptor::default(),
         })
         .build(&device, FORMAT);
 
@@ -93,7 +89,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
                     &wgpu::CommandEncoderDescriptor {
-                        label: Some(Borrowed("Redraw")),
+                        label: Some("Redraw"),
                     },
                 );
 
@@ -107,7 +103,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 {
                     let _ = encoder.begin_render_pass(
                         &wgpu::RenderPassDescriptor {
-                            color_attachments: Borrowed(&[
+                            color_attachments: &[
                                 wgpu::RenderPassColorAttachmentDescriptor {
                                     attachment: &frame.view,
                                     resolve_target: None,
@@ -121,7 +117,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                         store: true,
                                     },
                                 },
-                            ]),
+                            ],
                             depth_stencil_attachment: None,
                         },
                     );
@@ -206,7 +202,7 @@ fn create_frame_views(
     );
 
     let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some(Borrowed("Depth buffer")),
+        label: Some("Depth buffer"),
         size: wgpu::Extent3d {
             width,
             height,
@@ -219,5 +215,5 @@ fn create_frame_views(
         usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
     });
 
-    (swap_chain, depth_texture.create_default_view())
+    (swap_chain, depth_texture.create_view(&wgpu::TextureViewDescriptor::default()))
 }

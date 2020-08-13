@@ -1,4 +1,3 @@
-use std::borrow::Cow::Borrowed;
 use std::error::Error;
 use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text};
 
@@ -92,7 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Get a command encoder for the current frame
                 let mut encoder = device.create_command_encoder(
                     &wgpu::CommandEncoderDescriptor {
-                        label: Some(Borrowed("Redraw")),
+                        label: Some("Redraw"),
                     },
                 );
 
@@ -106,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 {
                     let _ = encoder.begin_render_pass(
                         &wgpu::RenderPassDescriptor {
-                            color_attachments: Borrowed(&[
+                            color_attachments: &[
                                 wgpu::RenderPassColorAttachmentDescriptor {
                                     attachment: &frame.view,
                                     resolve_target: None,
@@ -120,7 +119,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                         store: true,
                                     },
                                 },
-                            ]),
+                            ],
                             depth_stencil_attachment: None,
                         },
                     );
