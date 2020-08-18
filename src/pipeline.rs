@@ -260,6 +260,7 @@ fn build<D>(
         = device.create_shader_module(wgpu::include_spirv!("shader/fragment.spv"));
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: None,
         layout: Some(&layout),
         vertex_stage: wgpu::ProgrammableStageDescriptor {
             module: &vs_module,
