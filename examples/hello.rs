@@ -12,28 +12,30 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build(&event_loop)
         .unwrap();
 
-    let surface = wgpu::Surface::create(&window);
+    let instance = wgpu::Instance::new(wgpu::BackendBit::all());
+    let surface = unsafe { instance.create_surface(&window) };
 
     // Initialize GPU
     let (device, queue) = futures::executor::block_on(async {
-        let adapter = wgpu::Adapter::request(
+        let adapter = instance.request_adapter(
             &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
             },
-            wgpu::BackendBit::all(),
         )
         .await
         .expect("Request adapter");
 
-        adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                extensions: wgpu::Extensions {
-                    anisotropic_filtering: false,
-                },
-                limits: wgpu::Limits { max_bind_groups: 1 },
-            })
-            .await
+        adapter.request_device(
+            &wgpu::DeviceDescriptor {
+                features: wgpu::Features::empty(),
+                limits: wgpu::Limits::default(),
+                shader_validation: false,
+            },
+            None
+        )
+        .await
+        .expect("Request device")
     });
 
     // Prepare swap chain
@@ -94,8 +96,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 );
 
                 // Get the next frame
-                let frame =
-                    swap_chain.get_next_texture().expect("Get next frame");
+                let frame = swap_chain
+                    .get_current_frame()
+                    .expect("Get next frame")
+                    .output;
 
                 // Clear frame
                 {
@@ -105,13 +109,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 wgpu::RenderPassColorAttachmentDescriptor {
                                     attachment: &frame.view,
                                     resolve_target: None,
-                                    load_op: wgpu::LoadOp::Clear,
-                                    store_op: wgpu::StoreOp::Store,
-                                    clear_color: wgpu::Color {
-                                        r: 0.4,
-                                        g: 0.4,
-                                        b: 0.4,
-                                        a: 1.0,
+                                    ops: wgpu::Operations {
+                                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                                            r: 0.4,
+                                            g: 0.4,
+                                            b: 0.4,
+                                            a: 1.0,
+                                        }),
+                                        store: true,
                                     },
                                 },
                             ],
@@ -149,7 +154,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     )
                     .expect("Draw queued");
 
-                queue.submit(&[encoder.finish()]);
+                queue.submit(Some(encoder.finish()));
             }
             _ => {
                 *control_flow = winit::event_loop::ControlFlow::Wait;
