@@ -6,8 +6,8 @@ use cache::Cache;
 use glyph_brush::ab_glyph::{point, Rect};
 use std::marker::PhantomData;
 use std::mem;
-use zerocopy::AsBytes;
 use wgpu::util::DeviceExt;
+use zerocopy::AsBytes;
 
 pub struct Pipeline<Depth> {
     transform: wgpu::Buffer,
@@ -145,11 +145,12 @@ impl<Depth> Pipeline<Depth> {
             self.supported_instances = instances.len();
         }
 
-        let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: instances.as_bytes(),
-            usage: wgpu::BufferUsage::COPY_SRC,
-        });
+        let instance_buffer =
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: instances.as_bytes(),
+                usage: wgpu::BufferUsage::COPY_SRC,
+            });
 
         encoder.copy_buffer_to_buffer(
             &instance_buffer,
@@ -180,11 +181,12 @@ fn build<D>(
     cache_width: u32,
     cache_height: u32,
 ) -> Pipeline<D> {
-    let transform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: None,
-        contents: IDENTITY_MATRIX.as_bytes(),
-        usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-    });
+    let transform =
+        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: IDENTITY_MATRIX.as_bytes(),
+            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        });
 
     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
         address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -207,15 +209,17 @@ fn build<D>(
                     visibility: wgpu::ShaderStage::VERTEX,
                     ty: wgpu::BindingType::UniformBuffer {
                         dynamic: false,
-                        min_binding_size: wgpu::BufferSize::new(mem::size_of::<[f32; 16]>() as u64)
+                        min_binding_size: wgpu::BufferSize::new(
+                            mem::size_of::<[f32; 16]>() as u64,
+                        ),
                     },
-                    count: None
+                    count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::Sampler { comparison: false },
-                    count: None
+                    count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 2,
@@ -225,7 +229,7 @@ fn build<D>(
                         component_type: wgpu::TextureComponentType::Float,
                         multisampled: false,
                     },
-                    count: None
+                    count: None,
                 },
             ],
         });
@@ -253,11 +257,11 @@ fn build<D>(
             bind_group_layouts: &[&uniform_layout],
         });
 
-    let vs_module
-        = device.create_shader_module(wgpu::include_spirv!("shader/vertex.spv"));
+    let vs_module =
+        device.create_shader_module(wgpu::include_spirv!("shader/vertex.spv"));
 
-    let fs_module
-        = device.create_shader_module(wgpu::include_spirv!("shader/fragment.spv"));
+    let fs_module = device
+        .create_shader_module(wgpu::include_spirv!("shader/fragment.spv"));
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
@@ -357,11 +361,12 @@ fn draw<D>(
     region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
-        let transform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: transform.as_bytes(),
-            usage: wgpu::BufferUsage::COPY_SRC,
-        });
+        let transform_buffer =
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: transform.as_bytes(),
+                usage: wgpu::BufferUsage::COPY_SRC,
+            });
 
         encoder.copy_buffer_to_buffer(
             &transform_buffer,

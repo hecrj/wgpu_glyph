@@ -47,14 +47,15 @@ impl Cache {
 
         let mut padded_data = vec![0; padded_width * height];
         for row in 0..height {
-            padded_data[row * padded_width .. row * padded_width + width]
-                .copy_from_slice(&data[row * width .. (row + 1) * width])
+            padded_data[row * padded_width..row * padded_width + width]
+                .copy_from_slice(&data[row * width..(row + 1) * width])
         }
-        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: &padded_data,
-            usage: wgpu::BufferUsage::COPY_SRC,
-        });
+        let buffer =
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: &padded_data,
+                usage: wgpu::BufferUsage::COPY_SRC,
+            });
 
         encoder.copy_buffer_to_texture(
             wgpu::BufferCopyView {
@@ -63,7 +64,7 @@ impl Cache {
                     offset: 0,
                     bytes_per_row: padded_width as u32,
                     rows_per_image: height as u32,
-                }
+                },
             },
             wgpu::TextureCopyView {
                 texture: &self.texture,
