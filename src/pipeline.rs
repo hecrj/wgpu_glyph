@@ -3,10 +3,10 @@ mod cache;
 use crate::Region;
 use cache::Cache;
 
+use core::num::NonZeroU64;
 use glyph_brush::ab_glyph::{point, Rect};
 use std::marker::PhantomData;
 use std::mem;
-use wgpu::util::DeviceExt;
 use zerocopy::AsBytes;
 
 pub struct Pipeline<Depth> {
@@ -44,12 +44,22 @@ impl Pipeline<()> {
     pub fn draw(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
         region: Option<Region>,
     ) {
-        draw(self, device, encoder, target, None, transform, region);
+        draw(
+            self,
+            device,
+            staging_belt,
+            encoder,
+            target,
+            None,
+            transform,
+            region,
+        );
     }
 }
 
@@ -75,6 +85,7 @@ impl Pipeline<wgpu::DepthStencilStateDescriptor> {
     pub fn draw(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
@@ -84,6 +95,7 @@ impl Pipeline<wgpu::DepthStencilStateDescriptor> {
         draw(
             self,
             device,
+            staging_belt,
             encoder,
             target,
             Some(depth_stencil_attachment),
@@ -97,12 +109,14 @@ impl<Depth> Pipeline<Depth> {
     pub fn update_cache(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         offset: [u16; 2],
         size: [u16; 2],
         data: &[u8],
     ) {
-        self.cache.update(device, encoder, offset, size, data);
+        self.cache
+            .update(device, staging_belt, encoder, offset, size, data);
     }
 
     pub fn increase_cache_size(
@@ -125,6 +139,7 @@ impl<Depth> Pipeline<Depth> {
     pub fn upload(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         instances: &[Instance],
     ) {
@@ -145,20 +160,19 @@ impl<Depth> Pipeline<Depth> {
             self.supported_instances = instances.len();
         }
 
-        let instance_buffer =
-            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: None,
-                contents: instances.as_bytes(),
-                usage: wgpu::BufferUsage::COPY_SRC,
-            });
+        let instances_bytes = instances.as_bytes();
 
-        encoder.copy_buffer_to_buffer(
-            &instance_buffer,
-            0,
-            &self.instances,
-            0,
-            (mem::size_of::<Instance>() * instances.len()) as u64,
-        );
+        if let Some(size) = NonZeroU64::new(instances_bytes.len() as u64) {
+            let mut instances_view = staging_belt.write_buffer(
+                encoder,
+                &self.instances,
+                0,
+                size,
+                device,
+            );
+
+            instances_view.copy_from_slice(instances_bytes);
+        }
 
         self.current_instances = instances.len();
     }
@@ -181,6 +195,8 @@ fn build<D>(
     cache_width: u32,
     cache_height: u32,
 ) -> Pipeline<D> {
+    use wgpu::util::DeviceExt;
+
     let transform =
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -352,6 +368,7 @@ fn build<D>(
 fn draw<D>(
     pipeline: &mut Pipeline<D>,
     device: &wgpu::Device,
+    staging_belt: &mut wgpu::util::StagingBelt,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
     depth_stencil_attachment: Option<
@@ -361,20 +378,15 @@ fn draw<D>(
     region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
-        let transform_buffer =
-            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: None,
-                contents: transform.as_bytes(),
-                usage: wgpu::BufferUsage::COPY_SRC,
-            });
-
-        encoder.copy_buffer_to_buffer(
-            &transform_buffer,
-            0,
+        let mut transform_view = staging_belt.write_buffer(
+            encoder,
             &pipeline.transform,
             0,
-            16 * 4,
+            unsafe { NonZeroU64::new_unchecked(16 * 4) },
+            device,
         );
+
+        transform_view.copy_from_slice(transform.as_bytes());
 
         pipeline.current_transform = transform;
     }

@@ -138,6 +138,7 @@ where
     fn process_queued(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
     ) {
         let pipeline = &mut self.pipeline;
@@ -150,8 +151,14 @@ where
                     let offset = [rect.min[0] as u16, rect.min[1] as u16];
                     let size = [rect.width() as u16, rect.height() as u16];
 
-                    pipeline
-                        .update_cache(device, encoder, offset, size, tex_data);
+                    pipeline.update_cache(
+                        device,
+                        staging_belt,
+                        encoder,
+                        offset,
+                        size,
+                        tex_data,
+                    );
                 },
                 Instance::from_vertex,
             );
@@ -194,7 +201,7 @@ where
 
         match brush_action.unwrap() {
             BrushAction::Draw(verts) => {
-                self.pipeline.upload(device, encoder, &verts);
+                self.pipeline.upload(device, staging_belt, encoder, &verts);
             }
             BrushAction::ReDraw => {}
         };
@@ -236,6 +243,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     pub fn draw_queued(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         target_width: u32,
@@ -243,6 +251,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     ) -> Result<(), String> {
         self.draw_queued_with_transform(
             device,
+            staging_belt,
             encoder,
             target,
             orthographic_projection(target_width, target_height),
@@ -264,12 +273,20 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     pub fn draw_queued_with_transform(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
     ) -> Result<(), String> {
-        self.process_queued(device, encoder);
-        self.pipeline.draw(device, encoder, target, transform, None);
+        self.process_queued(device, staging_belt, encoder);
+        self.pipeline.draw(
+            device,
+            staging_belt,
+            encoder,
+            target,
+            transform,
+            None,
+        );
 
         Ok(())
     }
@@ -289,14 +306,21 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     pub fn draw_queued_with_transform_and_scissoring(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
         region: Region,
     ) -> Result<(), String> {
-        self.process_queued(device, encoder);
-        self.pipeline
-            .draw(device, encoder, target, transform, Some(region));
+        self.process_queued(device, staging_belt, encoder);
+        self.pipeline.draw(
+            device,
+            staging_belt,
+            encoder,
+            target,
+            transform,
+            Some(region),
+        );
 
         Ok(())
     }
@@ -341,6 +365,7 @@ impl<F: Font + Sync, H: BuildHasher>
     pub fn draw_queued(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
@@ -349,6 +374,7 @@ impl<F: Font + Sync, H: BuildHasher>
     ) -> Result<(), String> {
         self.draw_queued_with_transform(
             device,
+            staging_belt,
             encoder,
             target,
             depth_stencil_attachment,
@@ -371,14 +397,16 @@ impl<F: Font + Sync, H: BuildHasher>
     pub fn draw_queued_with_transform(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         transform: [f32; 16],
     ) -> Result<(), String> {
-        self.process_queued(device, encoder);
+        self.process_queued(device, staging_belt, encoder);
         self.pipeline.draw(
             device,
+            staging_belt,
             encoder,
             target,
             depth_stencil_attachment,
@@ -404,16 +432,18 @@ impl<F: Font + Sync, H: BuildHasher>
     pub fn draw_queued_with_transform_and_scissoring(
         &mut self,
         device: &wgpu::Device,
+        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
         transform: [f32; 16],
         region: Region,
     ) -> Result<(), String> {
-        self.process_queued(device, encoder);
+        self.process_queued(device, staging_belt, encoder);
 
         self.pipeline.draw(
             device,
+            staging_belt,
             encoder,
             target,
             depth_stencil_attachment,
