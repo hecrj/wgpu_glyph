@@ -70,7 +70,7 @@ impl Cache {
                 device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("wgpu_glyph::Cache upload buffer"),
                     size: padded_data_size,
-                    usage: wgpu::BufferUsage::COPY_SRC,
+                    usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::COPY_SRC,
                     mapped_at_creation: false,
                 });
 
