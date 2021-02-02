@@ -92,8 +92,8 @@ impl<F: Font, D, H: BuildHasher> GlyphBrushBuilder<D, F, H> {
     /// Sets the depth stencil.
     pub fn depth_stencil_state(
         self,
-        depth_stencil_state: wgpu::DepthStencilStateDescriptor,
-    ) -> GlyphBrushBuilder<wgpu::DepthStencilStateDescriptor, F, H> {
+        depth_stencil_state: wgpu::DepthStencilState,
+    ) -> GlyphBrushBuilder<wgpu::DepthStencilState, F, H> {
         GlyphBrushBuilder {
             inner: self.inner,
             texture_filter_method: self.texture_filter_method,
@@ -120,7 +120,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrushBuilder<(), F, H> {
 }
 
 impl<F: Font + Sync, H: BuildHasher>
-    GlyphBrushBuilder<wgpu::DepthStencilStateDescriptor, F, H>
+    GlyphBrushBuilder<wgpu::DepthStencilState, F, H>
 {
     /// Builds a `GlyphBrush` using the given `wgpu::Device` that can render
     /// text for texture views with the given `render_format`.
@@ -128,8 +128,8 @@ impl<F: Font + Sync, H: BuildHasher>
         self,
         device: &wgpu::Device,
         render_format: wgpu::TextureFormat,
-    ) -> GlyphBrush<wgpu::DepthStencilStateDescriptor, F, H> {
-        GlyphBrush::<wgpu::DepthStencilStateDescriptor, F, H>::new(
+    ) -> GlyphBrush<wgpu::DepthStencilState, F, H> {
+        GlyphBrush::<wgpu::DepthStencilState, F, H>::new(
             device,
             self.texture_filter_method,
             render_format,

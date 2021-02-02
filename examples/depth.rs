@@ -28,14 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .expect("Request adapter");
 
         adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::default(),
-                    shader_validation: false,
-                },
-                None,
-            )
+            .request_device(&wgpu::DeviceDescriptor::default(), None)
             .await
             .expect("Request device")
     });
@@ -58,11 +51,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     ))?;
 
     let mut glyph_brush = GlyphBrushBuilder::using_font(inconsolata)
-        .depth_stencil_state(wgpu::DepthStencilStateDescriptor {
+        .depth_stencil_state(wgpu::DepthStencilState {
             format: wgpu::TextureFormat::Depth32Float,
             depth_write_enabled: true,
             depth_compare: wgpu::CompareFunction::Greater,
-            stencil: wgpu::StencilStateDescriptor::default(),
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+            clamp_depth: false,
         })
         .build(&device, FORMAT);
 
@@ -108,6 +103,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 {
                     let _ = encoder.begin_render_pass(
                         &wgpu::RenderPassDescriptor {
+                            label: Some("Render pass"),
                             color_attachments: &[
                                 wgpu::RenderPassColorAttachmentDescriptor {
                                     attachment: &frame.view,
@@ -212,7 +208,7 @@ fn create_frame_views(
     let swap_chain = device.create_swap_chain(
         surface,
         &wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
             format: FORMAT,
             width,
             height,
@@ -231,7 +227,7 @@ fn create_frame_views(
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth32Float,
-        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+        usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
     });
 
     (

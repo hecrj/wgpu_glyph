@@ -26,14 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .expect("Request adapter");
 
         adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::default(),
-                    shader_validation: false,
-                },
-                None,
-            )
+            .request_device(&wgpu::DeviceDescriptor::default(), None)
             .await
             .expect("Request device")
     });
@@ -50,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut swap_chain = device.create_swap_chain(
         &surface,
         &wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
             format: render_format,
             width: size.width,
             height: size.height,
@@ -84,7 +77,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 swap_chain = device.create_swap_chain(
                     &surface,
                     &wgpu::SwapChainDescriptor {
-                        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+                        usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
                         format: render_format,
                         width: size.width,
                         height: size.height,
@@ -110,6 +103,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 {
                     let _ = encoder.begin_render_pass(
                         &wgpu::RenderPassDescriptor {
+                            label: Some("Render pass"),
                             color_attachments: &[
                                 wgpu::RenderPassColorAttachmentDescriptor {
                                     attachment: &frame.view,

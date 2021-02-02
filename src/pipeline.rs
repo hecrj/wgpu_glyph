@@ -63,15 +63,15 @@ impl Pipeline<()> {
     }
 }
 
-impl Pipeline<wgpu::DepthStencilStateDescriptor> {
+impl Pipeline<wgpu::DepthStencilState> {
     pub fn new(
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
-        depth_stencil_state: wgpu::DepthStencilStateDescriptor,
+        depth_stencil_state: wgpu::DepthStencilState,
         cache_width: u32,
         cache_height: u32,
-    ) -> Pipeline<wgpu::DepthStencilStateDescriptor> {
+    ) -> Pipeline<wgpu::DepthStencilState> {
         build(
             device,
             filter_mode,
@@ -191,7 +191,7 @@ fn build<D>(
     device: &wgpu::Device,
     filter_mode: wgpu::FilterMode,
     render_format: wgpu::TextureFormat,
-    depth_stencil_state: Option<wgpu::DepthStencilStateDescriptor>,
+    depth_stencil: Option<wgpu::DepthStencilState>,
     cache_width: u32,
     cache_height: u32,
 ) -> Pipeline<D> {
@@ -223,8 +223,9 @@ fn build<D>(
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStage::VERTEX,
-                    ty: wgpu::BindingType::UniformBuffer {
-                        dynamic: false,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
                         min_binding_size: wgpu::BufferSize::new(
                             mem::size_of::<[f32; 16]>() as u64,
                         ),
@@ -234,15 +235,20 @@ fn build<D>(
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler { comparison: false },
+                    ty: wgpu::BindingType::Sampler {
+                        filtering: false,
+                        comparison: false,
+                    },
                     count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 2,
                     visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::SampledTexture {
-                        dimension: wgpu::TextureViewDimension::D2,
-                        component_type: wgpu::TextureComponentType::Float,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float {
+                            filterable: false,
+                        },
+                        view_dimension: wgpu::TextureViewDimension::D2,
                         multisampled: false,
                     },
                     count: None,
@@ -274,70 +280,42 @@ fn build<D>(
         });
 
     let vs_module =
-        device.create_shader_module(wgpu::include_spirv!("shader/vertex.spv"));
+        device.create_shader_module(&wgpu::include_spirv!("shader/vertex.spv"));
 
     let fs_module = device
-        .create_shader_module(wgpu::include_spirv!("shader/fragment.spv"));
+        .create_shader_module(&wgpu::include_spirv!("shader/fragment.spv"));
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
         layout: Some(&layout),
-        vertex_stage: wgpu::ProgrammableStageDescriptor {
+        vertex: wgpu::VertexState {
             module: &vs_module,
             entry_point: "main",
-        },
-        fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-            module: &fs_module,
-            entry_point: "main",
-        }),
-        rasterization_state: Some(wgpu::RasterizationStateDescriptor {
-            front_face: wgpu::FrontFace::Cw,
-            cull_mode: wgpu::CullMode::None,
-            ..Default::default()
-        }),
-        primitive_topology: wgpu::PrimitiveTopology::TriangleStrip,
-        color_states: &[wgpu::ColorStateDescriptor {
-            format: render_format,
-            color_blend: wgpu::BlendDescriptor {
-                src_factor: wgpu::BlendFactor::SrcAlpha,
-                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                operation: wgpu::BlendOperation::Add,
-            },
-            alpha_blend: wgpu::BlendDescriptor {
-                src_factor: wgpu::BlendFactor::One,
-                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                operation: wgpu::BlendOperation::Add,
-            },
-            write_mask: wgpu::ColorWrite::ALL,
-        }],
-        depth_stencil_state,
-        vertex_state: wgpu::VertexStateDescriptor {
-            index_format: wgpu::IndexFormat::Uint16,
-            vertex_buffers: &[wgpu::VertexBufferDescriptor {
-                stride: mem::size_of::<Instance>() as u64,
+            buffers: &[wgpu::VertexBufferLayout {
+                array_stride: mem::size_of::<Instance>() as u64,
                 step_mode: wgpu::InputStepMode::Instance,
                 attributes: &[
-                    wgpu::VertexAttributeDescriptor {
+                    wgpu::VertexAttribute {
                         shader_location: 0,
                         format: wgpu::VertexFormat::Float3,
                         offset: 0,
                     },
-                    wgpu::VertexAttributeDescriptor {
+                    wgpu::VertexAttribute {
                         shader_location: 1,
                         format: wgpu::VertexFormat::Float2,
                         offset: 4 * 3,
                     },
-                    wgpu::VertexAttributeDescriptor {
+                    wgpu::VertexAttribute {
                         shader_location: 2,
                         format: wgpu::VertexFormat::Float2,
                         offset: 4 * (3 + 2),
                     },
-                    wgpu::VertexAttributeDescriptor {
+                    wgpu::VertexAttribute {
                         shader_location: 3,
                         format: wgpu::VertexFormat::Float2,
                         offset: 4 * (3 + 2 + 2),
                     },
-                    wgpu::VertexAttributeDescriptor {
+                    wgpu::VertexAttribute {
                         shader_location: 4,
                         format: wgpu::VertexFormat::Float4,
                         offset: 4 * (3 + 2 + 2 + 2),
@@ -345,9 +323,33 @@ fn build<D>(
                 ],
             }],
         },
-        sample_count: 1,
-        sample_mask: !0,
-        alpha_to_coverage_enabled: false,
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleStrip,
+            strip_index_format: None,
+            front_face: wgpu::FrontFace::Cw,
+            cull_mode: wgpu::CullMode::None,
+            polygon_mode: wgpu::PolygonMode::Fill,
+        },
+        depth_stencil,
+        multisample: wgpu::MultisampleState::default(),
+        fragment: Some(wgpu::FragmentState {
+            module: &fs_module,
+            entry_point: "main",
+            targets: &[wgpu::ColorTargetState {
+                format: render_format,
+                color_blend: wgpu::BlendState {
+                    src_factor: wgpu::BlendFactor::SrcAlpha,
+                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                    operation: wgpu::BlendOperation::Add,
+                },
+                alpha_blend: wgpu::BlendState {
+                    src_factor: wgpu::BlendFactor::One,
+                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                    operation: wgpu::BlendOperation::Add,
+                },
+                write_mask: wgpu::ColorWrite::ALL,
+            }],
+        }),
     });
 
     Pipeline {
@@ -393,6 +395,7 @@ fn draw<D>(
 
     let mut render_pass =
         encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("wgpu_glyph::pipeline render pass"),
             color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                 attachment: target,
                 resolve_target: None,
@@ -433,7 +436,11 @@ fn create_uniforms(
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer(transform.slice(..)),
+                resource: wgpu::BindingResource::Buffer {
+                    buffer: transform,
+                    offset: 0,
+                    size: None,
+                },
             },
             wgpu::BindGroupEntry {
                 binding: 1,
