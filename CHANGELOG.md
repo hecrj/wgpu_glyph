@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Updated `wgpu` to `0.7`. [#50]
+- Replaced `zerocopy` with `bytemuck`. [#51]
 
 [#50]: https://github.com/hecrj/wgpu_glyph/pull/50
+[#51]: https://github.com/hecrj/wgpu_glyph/pull/51
 
 
 ## [0.10.0] - 2020-08-27

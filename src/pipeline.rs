@@ -3,11 +3,11 @@ mod cache;
 use crate::Region;
 use cache::Cache;
 
+use bytemuck::{Pod, Zeroable};
 use core::num::NonZeroU64;
 use glyph_brush::ab_glyph::{point, Rect};
 use std::marker::PhantomData;
 use std::mem;
-use zerocopy::AsBytes;
 
 pub struct Pipeline<Depth> {
     transform: wgpu::Buffer,
@@ -160,7 +160,7 @@ impl<Depth> Pipeline<Depth> {
             self.supported_instances = instances.len();
         }
 
-        let instances_bytes = instances.as_bytes();
+        let instances_bytes = bytemuck::cast_slice(instances);
 
         if let Some(size) = NonZeroU64::new(instances_bytes.len() as u64) {
             let mut instances_view = staging_belt.write_buffer(
@@ -200,7 +200,7 @@ fn build<D>(
     let transform =
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
-            contents: IDENTITY_MATRIX.as_bytes(),
+            contents: bytemuck::cast_slice(&IDENTITY_MATRIX),
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
@@ -388,7 +388,7 @@ fn draw<D>(
             device,
         );
 
-        transform_view.copy_from_slice(transform.as_bytes());
+        transform_view.copy_from_slice(bytemuck::cast_slice(&transform));
 
         pipeline.current_transform = transform;
     }
@@ -455,7 +455,7 @@ fn create_uniforms(
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, AsBytes)]
+#[derive(Debug, Clone, Copy, Zeroable, Pod)]
 pub struct Instance {
     left_top: [f32; 3],
     right_bottom: [f32; 2],
