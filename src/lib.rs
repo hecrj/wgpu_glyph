@@ -326,20 +326,18 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     }
 }
 
-impl<F: Font + Sync, H: BuildHasher>
-    GlyphBrush<wgpu::DepthStencilStateDescriptor, F, H>
-{
+impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
     fn new(
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
-        depth_stencil_state: wgpu::DepthStencilStateDescriptor,
+        depth_stencil_state: wgpu::DepthStencilState,
         raw_builder: glyph_brush::GlyphBrushBuilder<F, H>,
     ) -> Self {
         let glyph_brush = raw_builder.build();
         let (cache_width, cache_height) = glyph_brush.texture_dimensions();
         GlyphBrush {
-            pipeline: Pipeline::<wgpu::DepthStencilStateDescriptor>::new(
+            pipeline: Pipeline::<wgpu::DepthStencilState>::new(
                 device,
                 filter_mode,
                 render_format,

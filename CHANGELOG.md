@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Updated `wgpu` to `0.7`. [#50]
+
+[#50]: https://github.com/hecrj/wgpu_glyph/pull/50
+
 
 ## [0.10.0] - 2020-08-27
 ### Changed
