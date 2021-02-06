@@ -1,7 +1,7 @@
-name: Integration
+name: Test
 on: [push]
 jobs:
-  test:
+  native:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
