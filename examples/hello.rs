@@ -43,7 +43,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let surface = unsafe { instance.create_surface(&window) };
 
     // Initialize GPU
-    let (device, queue) = futures::executor::block_on(async {
+    let (device, queue) = {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -56,7 +56,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
             .request_device(&wgpu::DeviceDescriptor::default(), None)
             .await
             .expect("Request device")
-    });
+    };
 
     // Create staging belt and a local pool
     let mut staging_belt = wgpu::util::StagingBelt::new(1024);
