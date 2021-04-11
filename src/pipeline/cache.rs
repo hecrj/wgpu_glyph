@@ -1,4 +1,5 @@
 use core::num::NonZeroU64;
+use std::num::NonZeroU32;
 
 pub struct Cache {
     texture: wgpu::Texture,
@@ -17,7 +18,7 @@ impl Cache {
             size: wgpu::Extent3d {
                 width,
                 height,
-                depth: 1,
+                depth_or_array_layers: 1,
             },
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
@@ -70,7 +71,8 @@ impl Cache {
                 device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("wgpu_glyph::Cache upload buffer"),
                     size: padded_data_size,
-                    usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::COPY_SRC,
+                    usage: wgpu::BufferUsage::COPY_DST
+                        | wgpu::BufferUsage::COPY_SRC,
                     mapped_at_creation: false,
                 });
 
@@ -90,16 +92,17 @@ impl Cache {
                 .copy_from_slice(&data[row * width..(row + 1) * width])
         }
 
+        // TODO: Move to use Queue for less buffer usage
         encoder.copy_buffer_to_texture(
-            wgpu::BufferCopyView {
+            wgpu::ImageCopyBuffer {
                 buffer: &self.upload_buffer,
-                layout: wgpu::TextureDataLayout {
+                layout: wgpu::ImageDataLayout {
                     offset: 0,
-                    bytes_per_row: padded_width as u32,
-                    rows_per_image: height as u32,
+                    bytes_per_row: NonZeroU32::new(padded_width as u32),
+                    rows_per_image: NonZeroU32::new(height as u32),
                 },
             },
-            wgpu::TextureCopyView {
+            wgpu::ImageCopyTexture {
                 texture: &self.texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d {
@@ -111,7 +114,7 @@ impl Cache {
             wgpu::Extent3d {
                 width: size[0] as u32,
                 height: size[1] as u32,
-                depth: 1,
+                depth_or_array_layers: 1,
             },
         );
     }
