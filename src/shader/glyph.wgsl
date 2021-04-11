@@ -1,9 +1,9 @@
 [[block]]
-struct Transforms {
+struct Globals {
     transform: mat4x4<f32>;
 };
 
-[[group(0), binding(0)]] var<uniform> transforms: Transforms;
+[[group(0), binding(0)]] var<uniform> globals: Globals;
 [[group(0), binding(1)]] var font_sampler: sampler;
 [[group(0), binding(2)]] var font_tex: texture_2d<f32>;
 
@@ -52,7 +52,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     }
     
     out.f_color = input.color;
-    out.position = transforms.transform * vec4<f32>(pos, input.left_top.z, 1.0);
+    out.position = globals.transform * vec4<f32>(pos, input.left_top.z, 1.0);
 
     return out;
 }
