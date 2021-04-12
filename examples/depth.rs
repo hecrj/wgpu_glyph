@@ -57,7 +57,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             depth_compare: wgpu::CompareFunction::Greater,
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),
-            clamp_depth: false,
         })
         .build(&device, FORMAT);
 
@@ -105,8 +104,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &wgpu::RenderPassDescriptor {
                             label: Some("Render pass"),
                             color_attachments: &[
-                                wgpu::RenderPassColorAttachmentDescriptor {
-                                    attachment: &frame.view,
+                                wgpu::RenderPassColorAttachment {
+                                    view: &frame.view,
                                     resolve_target: None,
                                     ops: wgpu::Operations {
                                         load: wgpu::LoadOp::Clear(
@@ -162,8 +161,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &mut staging_belt,
                         &mut encoder,
                         &frame.view,
-                        wgpu::RenderPassDepthStencilAttachmentDescriptor {
-                            attachment: &depth_view,
+                        wgpu::RenderPassDepthStencilAttachment {
+                            view: &depth_view,
                             depth_ops: Some(wgpu::Operations {
                                 load: wgpu::LoadOp::Clear(-1.0),
                                 store: true,
@@ -221,7 +220,7 @@ fn create_frame_views(
         size: wgpu::Extent3d {
             width,
             height,
-            depth: 1,
+            depth_or_array_layers: 1,
         },
         mip_level_count: 1,
         sample_count: 1,
