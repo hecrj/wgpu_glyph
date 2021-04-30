@@ -236,7 +236,7 @@ fn build<D>(
                     binding: 1,
                     visibility: wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::Sampler {
-                        filtering: false,
+                        filtering: true,
                         comparison: false,
                     },
                     count: None,
@@ -281,8 +281,10 @@ fn build<D>(
 
     let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
         label: Some("Glyph Shader"),
-        source: wgpu::ShaderSource::Wgsl(crate::Cow::Borrowed(include_str!("shader/glyph.wgsl"))),
-        flags: wgpu::ShaderFlags::all()
+        source: wgpu::ShaderSource::Wgsl(crate::Cow::Borrowed(include_str!(
+            "shader/glyph.wgsl"
+        ))),
+        flags: wgpu::ShaderFlags::all(),
     });
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -373,9 +375,7 @@ fn draw<D>(
     staging_belt: &mut wgpu::util::StagingBelt,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
-    depth_stencil_attachment: Option<
-        wgpu::RenderPassDepthStencilAttachment,
-    >,
+    depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment>,
     transform: [f32; 16],
     region: Option<Region>,
 ) {
@@ -436,11 +436,11 @@ fn create_uniforms(
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer {
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
                     buffer: transform,
                     offset: 0,
                     size: None,
-                },
+                }),
             },
             wgpu::BindGroupEntry {
                 binding: 1,
