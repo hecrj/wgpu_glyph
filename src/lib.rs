@@ -366,7 +366,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         target_width: u32,
         target_height: u32,
     ) -> Result<(), String> {
@@ -398,7 +398,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
     ) -> Result<(), String> {
         self.process_queued(device, staging_belt, encoder);
@@ -433,7 +433,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
         region: Region,
     ) -> Result<(), String> {

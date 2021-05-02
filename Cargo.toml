@@ -11,13 +11,20 @@ documentation = "https://docs.rs/wgpu_glyph"
 readme = "README.md"
 
 [dependencies]
-wgpu = "0.7"
 glyph_brush = "0.7"
 log = "0.4"
 
 [dependencies.bytemuck]
 version = "1.4"
 features = ["derive"]
+
+[dependencies.wgpu]
+version = "0.8"
+# NB: wgpu switched the default shader translator to `naga` in in 0.8.0,
+# but it currently produces syntax errors when translating this crate's shaders
+# to GLSL for `gfx_backend_gl`.
+# So, for now, tell it to use the legacy `spirv_cross` shader translator.
+features = ["cross"] 
 
 [dev-dependencies]
 env_logger = "0.7"
