@@ -129,13 +129,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Depth buffer will make it appear on top.
                 glyph_brush.queue(Section {
                     screen_position: (30.0, 30.0),
-                    text: vec![
-                        Text::default()
-                            .with_text("On top")
-                            .with_scale(95.0)
-                            .with_color([0.8, 0.8, 0.8, 1.0])
-                            .with_z(0.9),
-                    ],
+                    text: vec![Text::default()
+                        .with_text("On top")
+                        .with_scale(95.0)
+                        .with_color([0.8, 0.8, 0.8, 1.0])
+                        .with_z(0.9)],
                     ..Section::default()
                 });
 
@@ -144,17 +142,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // previous queued text.
                 glyph_brush.queue(Section {
                     bounds: (size.width as f32, size.height as f32),
-                    text: vec![
-                        Text::default()
-                            .with_text(
-                                &include_str!("lipsum.txt")
-                                    .replace("\n\n", "")
-                                    .repeat(10),
-                            )
-                            .with_scale(30.0)
-                            .with_color([0.05, 0.05, 0.1, 1.0])
-                            .with_z(0.2),
-                    ],
+                    text: vec![Text::default()
+                        .with_text(
+                            &include_str!("lipsum.txt")
+                                .replace("\n\n", "")
+                                .repeat(10),
+                        )
+                        .with_scale(30.0)
+                        .with_color([0.05, 0.05, 0.1, 1.0])
+                        .with_z(0.2)],
                     ..Section::default()
                 });
 
