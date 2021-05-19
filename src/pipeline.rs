@@ -88,7 +88,7 @@ impl Pipeline<wgpu::DepthStencilState> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
-        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachmentDescriptor,
+        depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
         region: Option<Region>,
     ) {
@@ -236,7 +236,7 @@ fn build<D>(
                     binding: 1,
                     visibility: wgpu::ShaderStage::FRAGMENT,
                     ty: wgpu::BindingType::Sampler {
-                        filtering: false,
+                        filtering: true,
                         comparison: false,
                     },
                     count: None,
@@ -279,45 +279,47 @@ fn build<D>(
             bind_group_layouts: &[&uniform_layout],
         });
 
-    let vs_module =
-        device.create_shader_module(&wgpu::include_spirv!("shader/vertex.spv"));
-
-    let fs_module = device
-        .create_shader_module(&wgpu::include_spirv!("shader/fragment.spv"));
+    let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        label: Some("Glyph Shader"),
+        source: wgpu::ShaderSource::Wgsl(crate::Cow::Borrowed(include_str!(
+            "shader/glyph.wgsl"
+        ))),
+        flags: wgpu::ShaderFlags::all(),
+    });
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
         layout: Some(&layout),
         vertex: wgpu::VertexState {
-            module: &vs_module,
-            entry_point: "main",
+            module: &shader,
+            entry_point: "vs_main",
             buffers: &[wgpu::VertexBufferLayout {
                 array_stride: mem::size_of::<Instance>() as u64,
                 step_mode: wgpu::InputStepMode::Instance,
                 attributes: &[
                     wgpu::VertexAttribute {
                         shader_location: 0,
-                        format: wgpu::VertexFormat::Float3,
+                        format: wgpu::VertexFormat::Float32x3,
                         offset: 0,
                     },
                     wgpu::VertexAttribute {
                         shader_location: 1,
-                        format: wgpu::VertexFormat::Float2,
+                        format: wgpu::VertexFormat::Float32x2,
                         offset: 4 * 3,
                     },
                     wgpu::VertexAttribute {
                         shader_location: 2,
-                        format: wgpu::VertexFormat::Float2,
+                        format: wgpu::VertexFormat::Float32x2,
                         offset: 4 * (3 + 2),
                     },
                     wgpu::VertexAttribute {
                         shader_location: 3,
-                        format: wgpu::VertexFormat::Float2,
+                        format: wgpu::VertexFormat::Float32x2,
                         offset: 4 * (3 + 2 + 2),
                     },
                     wgpu::VertexAttribute {
                         shader_location: 4,
-                        format: wgpu::VertexFormat::Float4,
+                        format: wgpu::VertexFormat::Float32x4,
                         offset: 4 * (3 + 2 + 2 + 2),
                     },
                 ],
@@ -325,28 +327,28 @@ fn build<D>(
         },
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleStrip,
-            strip_index_format: None,
             front_face: wgpu::FrontFace::Cw,
-            cull_mode: wgpu::CullMode::None,
-            polygon_mode: wgpu::PolygonMode::Fill,
+            ..Default::default()
         },
         depth_stencil,
         multisample: wgpu::MultisampleState::default(),
         fragment: Some(wgpu::FragmentState {
-            module: &fs_module,
-            entry_point: "main",
+            module: &shader,
+            entry_point: "fs_main",
             targets: &[wgpu::ColorTargetState {
                 format: render_format,
-                color_blend: wgpu::BlendState {
-                    src_factor: wgpu::BlendFactor::SrcAlpha,
-                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                    operation: wgpu::BlendOperation::Add,
-                },
-                alpha_blend: wgpu::BlendState {
-                    src_factor: wgpu::BlendFactor::One,
-                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                    operation: wgpu::BlendOperation::Add,
-                },
+                blend: Some(wgpu::BlendState {
+                    color: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::SrcAlpha,
+                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                    alpha: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::One,
+                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                }),
                 write_mask: wgpu::ColorWrite::ALL,
             }],
         }),
@@ -373,9 +375,7 @@ fn draw<D>(
     staging_belt: &mut wgpu::util::StagingBelt,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
-    depth_stencil_attachment: Option<
-        wgpu::RenderPassDepthStencilAttachmentDescriptor,
-    >,
+    depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment>,
     transform: [f32; 16],
     region: Option<Region>,
 ) {
@@ -396,8 +396,8 @@ fn draw<D>(
     let mut render_pass =
         encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("wgpu_glyph::pipeline render pass"),
-            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                attachment: target,
+            color_attachments: &[wgpu::RenderPassColorAttachment {
+                view: target,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Load,
@@ -436,11 +436,11 @@ fn create_uniforms(
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer {
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
                     buffer: transform,
                     offset: 0,
                     size: None,
-                },
+                }),
             },
             wgpu::BindGroupEntry {
                 binding: 1,

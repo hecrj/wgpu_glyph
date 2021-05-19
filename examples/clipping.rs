@@ -105,8 +105,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &wgpu::RenderPassDescriptor {
                             label: Some("Render pass"),
                             color_attachments: &[
-                                wgpu::RenderPassColorAttachmentDescriptor {
-                                    attachment: &frame.view,
+                                wgpu::RenderPassColorAttachment {
+                                    view: &frame.view,
                                     resolve_target: None,
                                     ops: wgpu::Operations {
                                         load: wgpu::LoadOp::Clear(
