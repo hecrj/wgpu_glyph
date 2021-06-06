@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let surface = unsafe { instance.create_surface(&window) };
 
     // Initialize GPU
-    let (device, queue) = futures::executor::block_on(async {
+    let (device, mut queue) = futures::executor::block_on(async {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -32,11 +32,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("Request device")
     });
-
-    // Create staging belt and a local pool
-    let mut staging_belt = wgpu::util::StagingBelt::new(1024);
-    let mut local_pool = futures::executor::LocalPool::new();
-    let local_spawner = local_pool.spawner();
 
     // Prepare swap chain and depth buffer
     let mut size = window.inner_size();
@@ -158,7 +153,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 glyph_brush
                     .draw_queued(
                         &device,
-                        &mut staging_belt,
+                        &mut queue,
                         &mut encoder,
                         &frame.view,
                         wgpu::RenderPassDepthStencilAttachment {
@@ -178,17 +173,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .expect("Draw queued");
 
                 // Submit the work!
-                staging_belt.finish();
                 queue.submit(Some(encoder.finish()));
 
-                // Recall unused staging buffers
-                use futures::task::SpawnExt;
-
-                local_spawner
-                    .spawn(staging_belt.recall())
-                    .expect("Recall staging belt");
-
-                local_pool.run_until_stalled();
             }
             _ => {
                 *control_flow = winit::event_loop::ControlFlow::Wait;

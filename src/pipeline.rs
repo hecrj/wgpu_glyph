@@ -44,7 +44,7 @@ impl Pipeline<()> {
     pub fn draw(
         &mut self,
         device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
+        queue: &mut wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
@@ -53,7 +53,7 @@ impl Pipeline<()> {
         draw(
             self,
             device,
-            staging_belt,
+            queue,
             encoder,
             target,
             None,
@@ -85,7 +85,7 @@ impl Pipeline<wgpu::DepthStencilState> {
     pub fn draw(
         &mut self,
         device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
+        queue: &mut wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
@@ -95,7 +95,7 @@ impl Pipeline<wgpu::DepthStencilState> {
         draw(
             self,
             device,
-            staging_belt,
+            queue,
             encoder,
             target,
             Some(depth_stencil_attachment),
@@ -109,14 +109,14 @@ impl<Depth> Pipeline<Depth> {
     pub fn update_cache(
         &mut self,
         device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
+        queue: &mut wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         offset: [u16; 2],
         size: [u16; 2],
         data: &[u8],
     ) {
         self.cache
-            .update(device, staging_belt, encoder, offset, size, data);
+            .update(device, queue, encoder, offset, size, data);
     }
 
     pub fn increase_cache_size(
@@ -139,7 +139,7 @@ impl<Depth> Pipeline<Depth> {
     pub fn upload(
         &mut self,
         device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
+        queue: &mut wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         instances: &[Instance],
     ) {
@@ -163,15 +163,7 @@ impl<Depth> Pipeline<Depth> {
         let instances_bytes = bytemuck::cast_slice(instances);
 
         if let Some(size) = NonZeroU64::new(instances_bytes.len() as u64) {
-            let mut instances_view = staging_belt.write_buffer(
-                encoder,
-                &self.instances,
-                0,
-                size,
-                device,
-            );
-
-            instances_view.copy_from_slice(instances_bytes);
+            queue.write_buffer(&self.instances, 0, instances_bytes);
         }
 
         self.current_instances = instances.len();
@@ -372,7 +364,7 @@ fn build<D>(
 fn draw<D>(
     pipeline: &mut Pipeline<D>,
     device: &wgpu::Device,
-    staging_belt: &mut wgpu::util::StagingBelt,
+    queue: &mut wgpu::Queue,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
     depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment>,
@@ -380,16 +372,7 @@ fn draw<D>(
     region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
-        let mut transform_view = staging_belt.write_buffer(
-            encoder,
-            &pipeline.transform,
-            0,
-            unsafe { NonZeroU64::new_unchecked(16 * 4) },
-            device,
-        );
-
-        transform_view.copy_from_slice(bytemuck::cast_slice(&transform));
-
+        queue.write_buffer(&pipeline.transform, 0, bytemuck::cast_slice(&transform));
         pipeline.current_transform = transform;
     }
 
