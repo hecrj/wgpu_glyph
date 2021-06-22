@@ -296,32 +296,12 @@ fn build<D>(
             buffers: &[wgpu::VertexBufferLayout {
                 array_stride: mem::size_of::<Instance>() as u64,
                 step_mode: wgpu::InputStepMode::Instance,
-                attributes: &[
-                    wgpu::VertexAttribute {
-                        shader_location: 0,
-                        format: wgpu::VertexFormat::Float32x3,
-                        offset: 0,
-                    },
-                    wgpu::VertexAttribute {
-                        shader_location: 1,
-                        format: wgpu::VertexFormat::Float32x2,
-                        offset: 4 * 3,
-                    },
-                    wgpu::VertexAttribute {
-                        shader_location: 2,
-                        format: wgpu::VertexFormat::Float32x2,
-                        offset: 4 * (3 + 2),
-                    },
-                    wgpu::VertexAttribute {
-                        shader_location: 3,
-                        format: wgpu::VertexFormat::Float32x2,
-                        offset: 4 * (3 + 2 + 2),
-                    },
-                    wgpu::VertexAttribute {
-                        shader_location: 4,
-                        format: wgpu::VertexFormat::Float32x4,
-                        offset: 4 * (3 + 2 + 2 + 2),
-                    },
+                attributes: &wgpu::vertex_attr_array![
+                    0 => Float32x3,
+                    1 => Float32x2,
+                    2 => Float32x2,
+                    3 => Float32x2,
+                    4 => Float32x4,
                 ],
             }],
         },
