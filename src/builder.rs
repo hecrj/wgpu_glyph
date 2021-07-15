@@ -109,11 +109,13 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrushBuilder<(), F, H> {
         self,
         device: &wgpu::Device,
         render_format: wgpu::TextureFormat,
+        msaa_count: u32
     ) -> GlyphBrush<(), F, H> {
         GlyphBrush::<(), F, H>::new(
             device,
             self.texture_filter_method,
             render_format,
+            msaa_count,
             self.inner,
         )
     }
@@ -128,11 +130,13 @@ impl<F: Font + Sync, H: BuildHasher>
         self,
         device: &wgpu::Device,
         render_format: wgpu::TextureFormat,
+        msaa_count: u32
     ) -> GlyphBrush<wgpu::DepthStencilState, F, H> {
         GlyphBrush::<wgpu::DepthStencilState, F, H>::new(
             device,
             self.texture_filter_method,
             render_format,
+            msaa_count,
             self.depth,
             self.inner,
         )

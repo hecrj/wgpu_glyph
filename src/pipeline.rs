@@ -28,6 +28,7 @@ impl Pipeline<()> {
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
+        msaa_count: u32,
         cache_width: u32,
         cache_height: u32,
     ) -> Pipeline<()> {
@@ -35,6 +36,7 @@ impl Pipeline<()> {
             device,
             filter_mode,
             render_format,
+            msaa_count,
             None,
             cache_width,
             cache_height,
@@ -47,6 +49,7 @@ impl Pipeline<()> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        resolve_target: Option<&wgpu::TextureView>,
         transform: [f32; 16],
         region: Option<Region>,
     ) {
@@ -56,6 +59,7 @@ impl Pipeline<()> {
             staging_belt,
             encoder,
             target,
+            resolve_target,
             None,
             transform,
             region,
@@ -68,6 +72,7 @@ impl Pipeline<wgpu::DepthStencilState> {
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
+        msaa_count: u32,
         depth_stencil_state: wgpu::DepthStencilState,
         cache_width: u32,
         cache_height: u32,
@@ -76,6 +81,7 @@ impl Pipeline<wgpu::DepthStencilState> {
             device,
             filter_mode,
             render_format,
+            msaa_count,
             Some(depth_stencil_state),
             cache_width,
             cache_height,
@@ -88,6 +94,7 @@ impl Pipeline<wgpu::DepthStencilState> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        resolve_target: Option<&wgpu::TextureView>,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
         region: Option<Region>,
@@ -98,6 +105,7 @@ impl Pipeline<wgpu::DepthStencilState> {
             staging_belt,
             encoder,
             target,
+            resolve_target,
             Some(depth_stencil_attachment),
             transform,
             region,
@@ -191,6 +199,7 @@ fn build<D>(
     device: &wgpu::Device,
     filter_mode: wgpu::FilterMode,
     render_format: wgpu::TextureFormat,
+    msaa_count: u32,
     depth_stencil: Option<wgpu::DepthStencilState>,
     cache_width: u32,
     cache_height: u32,
@@ -311,7 +320,10 @@ fn build<D>(
             ..Default::default()
         },
         depth_stencil,
-        multisample: wgpu::MultisampleState::default(),
+        multisample: wgpu::MultisampleState {
+            count: msaa_count,
+            ..wgpu::MultisampleState::default()
+        },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
             entry_point: "fs_main",
@@ -355,6 +367,7 @@ fn draw<D>(
     staging_belt: &mut wgpu::util::StagingBelt,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
+    resolve_target: Option<&wgpu::TextureView>,
     depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment>,
     transform: [f32; 16],
     region: Option<Region>,
@@ -378,7 +391,7 @@ fn draw<D>(
             label: Some("wgpu_glyph::pipeline render pass"),
             color_attachments: &[wgpu::RenderPassColorAttachment {
                 view: target,
-                resolve_target: None,
+                resolve_target: resolve_target,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Load,
                     store: true,
