@@ -213,6 +213,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
+        msaa_count: u32,
         raw_builder: glyph_brush::GlyphBrushBuilder<F, H>,
     ) -> Self {
         let glyph_brush = raw_builder.build();
@@ -222,6 +223,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
                 device,
                 filter_mode,
                 render_format,
+                msaa_count,
                 cache_width,
                 cache_height,
             ),
@@ -246,6 +248,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        resolve_target: Option<&wgpu::TextureView>,
         target_width: u32,
         target_height: u32,
     ) -> Result<(), String> {
@@ -254,6 +257,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
             staging_belt,
             encoder,
             target,
+            resolve_target,
             orthographic_projection(target_width, target_height),
         )
     }
@@ -276,6 +280,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        resolve_target: Option<&wgpu::TextureView>,
         transform: [f32; 16],
     ) -> Result<(), String> {
         self.process_queued(device, staging_belt, encoder);
@@ -284,6 +289,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
             staging_belt,
             encoder,
             target,
+            resolve_target,
             transform,
             None,
         );
@@ -309,6 +315,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        resolve_target: Option<&wgpu::TextureView>,
         transform: [f32; 16],
         region: Region,
     ) -> Result<(), String> {
@@ -318,6 +325,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
             staging_belt,
             encoder,
             target,
+            resolve_target,
             transform,
             Some(region),
         );
@@ -331,6 +339,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         device: &wgpu::Device,
         filter_mode: wgpu::FilterMode,
         render_format: wgpu::TextureFormat,
+        msaa_count: u32,
         depth_stencil_state: wgpu::DepthStencilState,
         raw_builder: glyph_brush::GlyphBrushBuilder<F, H>,
     ) -> Self {
@@ -341,6 +350,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
                 device,
                 filter_mode,
                 render_format,
+                msaa_count,
                 depth_stencil_state,
                 cache_width,
                 cache_height,
@@ -366,6 +376,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        resolve_target: Option<&wgpu::TextureView>,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         target_width: u32,
         target_height: u32,
@@ -375,6 +386,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
             staging_belt,
             encoder,
             target,
+            resolve_target,
             depth_stencil_attachment,
             orthographic_projection(target_width, target_height),
         )
@@ -398,6 +410,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        resolve_target: Option<&wgpu::TextureView>,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
     ) -> Result<(), String> {
@@ -407,6 +420,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
             staging_belt,
             encoder,
             target,
+            resolve_target,
             depth_stencil_attachment,
             transform,
             None,
@@ -433,6 +447,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        resolve_target: Option<&wgpu::TextureView>,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
         region: Region,
@@ -444,6 +459,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
             staging_belt,
             encoder,
             target,
+            resolve_target,
             depth_stencil_attachment,
             transform,
             Some(region),

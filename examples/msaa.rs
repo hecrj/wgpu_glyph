@@ -1,7 +1,7 @@
 use std::error::Error;
 use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text};
 
-const MSAA_COUNT: u32 = 1;
+const MSAA_COUNT: u32 = 8;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -52,6 +52,23 @@ fn main() -> Result<(), Box<dyn Error>> {
             present_mode: wgpu::PresentMode::Mailbox,
         },
     );
+    
+    let mut msaa_target = {
+        let msaa_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("msaa target"),
+            size: wgpu::Extent3d {
+                width: size.width,
+                height: size.height,
+                depth_or_array_layers: 1
+            },
+            mip_level_count: 1,
+            sample_count: MSAA_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: render_format,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+        });
+        msaa_texture.create_view(&wgpu::TextureViewDescriptor::default())
+    };
 
     // Prepare glyph_brush
     let inconsolata = ab_glyph::FontArc::try_from_slice(include_bytes!(
@@ -86,6 +103,23 @@ fn main() -> Result<(), Box<dyn Error>> {
                         present_mode: wgpu::PresentMode::Mailbox,
                     },
                 );
+                
+                msaa_target = {
+                    let msaa_texture = device.create_texture(&wgpu::TextureDescriptor {
+                        label: Some("msaa target"),
+                        size: wgpu::Extent3d {
+                            width: size.width,
+                            height: size.height,
+                            depth_or_array_layers: 1
+                        },
+                        mip_level_count: 1,
+                        sample_count: MSAA_COUNT,
+                        dimension: wgpu::TextureDimension::D2,
+                        format: render_format,
+                        usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+                    });
+                    msaa_texture.create_view(&wgpu::TextureViewDescriptor::default())
+                };
             }
             winit::event::Event::RedrawRequested { .. } => {
                 // Get a command encoder for the current frame
@@ -108,8 +142,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                             label: Some("Render pass"),
                             color_attachments: &[
                                 wgpu::RenderPassColorAttachment {
-                                    view: &frame.view,
-                                    resolve_target: None,
+                                    view: &msaa_target,
+                                    resolve_target: Some(&frame.view),
                                     ops: wgpu::Operations {
                                         load: wgpu::LoadOp::Clear(
                                             wgpu::Color {
@@ -131,17 +165,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 glyph_brush.queue(Section {
                     screen_position: (30.0, 30.0),
                     bounds: (size.width as f32, size.height as f32),
-                    text: vec![Text::new("Hello wgpu_glyph!")
+                    text: vec![Text::new("MSAA brush!")
                         .with_color([0.0, 0.0, 0.0, 1.0])
-                        .with_scale(40.0)],
-                    ..Section::default()
-                });
-
-                glyph_brush.queue(Section {
-                    screen_position: (30.0, 90.0),
-                    bounds: (size.width as f32, size.height as f32),
-                    text: vec![Text::new("Hello wgpu_glyph!")
-                        .with_color([1.0, 1.0, 1.0, 1.0])
                         .with_scale(40.0)],
                     ..Section::default()
                 });
@@ -152,8 +177,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &device,
                         &mut staging_belt,
                         &mut encoder,
-                        &frame.view,
-                        None,
+                        &msaa_target,
+                        Some(&frame.view),
                         size.width,
                         size.height,
                     )

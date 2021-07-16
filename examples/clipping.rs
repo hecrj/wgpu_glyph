@@ -1,6 +1,8 @@
 use std::error::Error;
 use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Region, Section, Text};
 
+const MSAA_COUNT: u32 = 1;
+
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
@@ -57,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     ))?;
 
     let mut glyph_brush = GlyphBrushBuilder::using_font(inconsolata)
-        .build(&device, render_format);
+        .build(&device, render_format, MSAA_COUNT);
 
     // Render loop
     window.request_redraw();
@@ -142,6 +144,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &mut staging_belt,
                         &mut encoder,
                         &frame.view,
+                        None,
                         size.width,
                         size.height,
                     )
@@ -163,6 +166,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &mut staging_belt,
                         &mut encoder,
                         &frame.view,
+                        None,
                         wgpu_glyph::orthographic_projection(
                             size.width,
                             size.height,

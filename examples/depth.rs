@@ -2,6 +2,7 @@ use std::error::Error;
 use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text};
 
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
+const MSAA_COUNT: u32 = 1;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -58,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),
         })
-        .build(&device, FORMAT);
+        .build(&device, FORMAT, MSAA_COUNT);
 
     // Render loop
     window.request_redraw();
@@ -161,6 +162,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &mut staging_belt,
                         &mut encoder,
                         &frame.view,
+                        None,
                         wgpu::RenderPassDepthStencilAttachment {
                             view: &depth_view,
                             depth_ops: Some(wgpu::Operations {
