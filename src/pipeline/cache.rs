@@ -1,11 +1,9 @@
-use core::num::NonZeroU64;
 use std::num::NonZeroU32;
 
 pub struct Cache {
     texture: wgpu::Texture,
     pub(super) view: wgpu::TextureView,
-    upload_buffer: wgpu::Buffer,
-    upload_buffer_size: u64,
+    padded_cache: Vec<u8>
 }
 
 impl Cache {
@@ -29,25 +27,20 @@ impl Cache {
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        let upload_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("wgpu_glyph::Cache upload buffer"),
-            size: Self::INITIAL_UPLOAD_BUFFER_SIZE,
-            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::COPY_SRC,
-            mapped_at_creation: false,
-        });
+        let mut padded_cache = Vec::new();
+        padded_cache.reserve(Self::INITIAL_UPLOAD_BUFFER_SIZE as usize);
 
         Cache {
             texture,
             view,
-            upload_buffer,
-            upload_buffer_size: Self::INITIAL_UPLOAD_BUFFER_SIZE,
+            padded_cache
         }
     }
 
     pub fn update(
         &mut self,
         device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
+        queue: &mut wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         offset: [u16; 2],
         size: [u16; 2],
@@ -65,43 +58,16 @@ impl Cache {
         let padded_width = width + padded_width_padding;
 
         let padded_data_size = (padded_width * height) as u64;
+        self.padded_cache.resize(padded_data_size as usize, 0);
 
-        if self.upload_buffer_size < padded_data_size {
-            self.upload_buffer =
-                device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("wgpu_glyph::Cache upload buffer"),
-                    size: padded_data_size,
-                    usage: wgpu::BufferUsage::COPY_DST
-                        | wgpu::BufferUsage::COPY_SRC,
-                    mapped_at_creation: false,
-                });
-
-            self.upload_buffer_size = padded_data_size;
-        }
-
-        let mut padded_data = staging_belt.write_buffer(
-            encoder,
-            &self.upload_buffer,
-            0,
-            NonZeroU64::new(padded_data_size).unwrap(),
-            device,
-        );
+        let padded_data = self.padded_cache.as_mut_slice();
 
         for row in 0..height {
             padded_data[row * padded_width..row * padded_width + width]
-                .copy_from_slice(&data[row * width..(row + 1) * width])
+                .copy_from_slice(&data[row * width..(row + 1) * width]);
         }
 
-        // TODO: Move to use Queue for less buffer usage
-        encoder.copy_buffer_to_texture(
-            wgpu::ImageCopyBuffer {
-                buffer: &self.upload_buffer,
-                layout: wgpu::ImageDataLayout {
-                    offset: 0,
-                    bytes_per_row: NonZeroU32::new(padded_width as u32),
-                    rows_per_image: NonZeroU32::new(height as u32),
-                },
-            },
+        queue.write_texture(
             wgpu::ImageCopyTexture {
                 texture: &self.texture,
                 mip_level: 0,
@@ -111,11 +77,17 @@ impl Cache {
                     z: 0,
                 },
             },
+            &padded_data,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: NonZeroU32::new(padded_width as u32),
+                rows_per_image: NonZeroU32::new(height as u32),
+            },
             wgpu::Extent3d {
                 width: size[0] as u32,
                 height: size[1] as u32,
                 depth_or_array_layers: 1,
-            },
+            }
         );
     }
 }
