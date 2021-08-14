@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build(&event_loop)
         .unwrap();
 
-    let instance = wgpu::Instance::new(wgpu::BackendBit::all());
+    let instance = wgpu::Instance::new(wgpu::Backends::all());
     let surface = unsafe { instance.create_surface(&window) };
 
     // Initialize GPU
@@ -40,10 +40,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let render_format = wgpu::TextureFormat::Bgra8UnormSrgb;
     let mut size = window.inner_size();
 
-    let mut swap_chain = device.create_swap_chain(
-        &surface,
-        &wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+    surface.configure(
+        &device,
+        &wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: render_format,
             width: size.width,
             height: size.height,
@@ -74,10 +74,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             } => {
                 size = new_size;
 
-                swap_chain = device.create_swap_chain(
-                    &surface,
-                    &wgpu::SwapChainDescriptor {
-                        usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+                surface.configure(
+                    &device,
+                    &wgpu::SurfaceConfiguration {
+                        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
                         format: render_format,
                         width: size.width,
                         height: size.height,
@@ -94,10 +94,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 );
 
                 // Get the next frame
-                let frame = swap_chain
-                    .get_current_frame()
-                    .expect("Get next frame")
-                    .output;
+                let frame =
+                    surface.get_current_frame().expect("Get next frame").output;
+                let view = &frame
+                    .texture
+                    .create_view(&wgpu::TextureViewDescriptor::default());
 
                 // Clear frame
                 {
@@ -106,7 +107,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             label: Some("Render pass"),
                             color_attachments: &[
                                 wgpu::RenderPassColorAttachment {
-                                    view: &frame.view,
+                                    view,
                                     resolve_target: None,
                                     ops: wgpu::Operations {
                                         load: wgpu::LoadOp::Clear(
@@ -150,7 +151,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &device,
                         &mut staging_belt,
                         &mut encoder,
-                        &frame.view,
+                        view,
                         size.width,
                         size.height,
                     )
