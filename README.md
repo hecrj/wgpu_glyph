@@ -12,7 +12,7 @@ A fast text renderer for [wgpu](https://github.com/gfx-rs/wgpu), powered by
 Add `wgpu_glyph` as a dependency in your `Cargo.toml`:
 
 ```toml
-wgpu_glyph = "0.13"
+wgpu_glyph = "0.14"
 ```
 
 ## Examples
