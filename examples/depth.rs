@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build(&event_loop)
         .unwrap();
 
-    let instance = wgpu::Instance::new(wgpu::BackendBit::all());
+    let instance = wgpu::Instance::new(wgpu::Backends::all());
     let surface = unsafe { instance.create_surface(&window) };
 
     // Initialize GPU
@@ -42,8 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut size = window.inner_size();
     let mut new_size = None;
 
-    let (mut swap_chain, mut depth_view) =
-        create_frame_views(&device, &surface, size);
+    let mut depth_view = create_frame_views(&device, &surface, size);
 
     // Prepare glyph_brush
     let inconsolata = ab_glyph::FontArc::try_from_slice(include_bytes!(
@@ -77,11 +76,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             winit::event::Event::RedrawRequested { .. } => {
                 if let Some(new_size) = new_size.take() {
-                    let (new_swap_chain, new_depth_view) =
+                    depth_view =
                         create_frame_views(&device, &surface, new_size);
-
-                    swap_chain = new_swap_chain;
-                    depth_view = new_depth_view;
                     size = new_size;
                 }
 
@@ -93,10 +89,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 );
 
                 // Get the next frame
-                let frame = swap_chain
-                    .get_current_frame()
-                    .expect("Get next frame")
-                    .output;
+                let frame =
+                    surface.get_current_frame().expect("Get next frame").output;
+                let view = &frame
+                    .texture
+                    .create_view(&wgpu::TextureViewDescriptor::default());
 
                 // Clear frame
                 {
@@ -105,7 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             label: Some("Render pass"),
                             color_attachments: &[
                                 wgpu::RenderPassColorAttachment {
-                                    view: &frame.view,
+                                    view,
                                     resolve_target: None,
                                     ops: wgpu::Operations {
                                         load: wgpu::LoadOp::Clear(
@@ -160,7 +157,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         &device,
                         &mut staging_belt,
                         &mut encoder,
-                        &frame.view,
+                        view,
                         wgpu::RenderPassDepthStencilAttachment {
                             view: &depth_view,
                             depth_ops: Some(wgpu::Operations {
@@ -201,13 +198,13 @@ fn create_frame_views(
     device: &wgpu::Device,
     surface: &wgpu::Surface,
     size: winit::dpi::PhysicalSize<u32>,
-) -> (wgpu::SwapChain, wgpu::TextureView) {
+) -> wgpu::TextureView {
     let (width, height) = (size.width, size.height);
 
-    let swap_chain = device.create_swap_chain(
-        surface,
-        &wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+    surface.configure(
+        device,
+        &wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: FORMAT,
             width,
             height,
@@ -226,11 +223,8 @@ fn create_frame_views(
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth32Float,
-        usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
     });
 
-    (
-        swap_chain,
-        depth_texture.create_view(&wgpu::TextureViewDescriptor::default()),
-    )
+    depth_texture.create_view(&wgpu::TextureViewDescriptor::default())
 }

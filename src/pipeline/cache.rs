@@ -22,7 +22,8 @@ impl Cache {
             },
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
-            usage: wgpu::TextureUsage::COPY_DST | wgpu::TextureUsage::SAMPLED,
+            usage: wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::TEXTURE_BINDING,
             mip_level_count: 1,
             sample_count: 1,
         });
@@ -32,7 +33,7 @@ impl Cache {
         let upload_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("wgpu_glyph::Cache upload buffer"),
             size: Self::INITIAL_UPLOAD_BUFFER_SIZE,
-            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::COPY_SRC,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
 
@@ -71,8 +72,8 @@ impl Cache {
                 device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("wgpu_glyph::Cache upload buffer"),
                     size: padded_data_size,
-                    usage: wgpu::BufferUsage::COPY_DST
-                        | wgpu::BufferUsage::COPY_SRC,
+                    usage: wgpu::BufferUsages::COPY_DST
+                        | wgpu::BufferUsages::COPY_SRC,
                     mapped_at_creation: false,
                 });
 
@@ -110,6 +111,7 @@ impl Cache {
                     y: u32::from(offset[1]),
                     z: 0,
                 },
+                aspect: wgpu::TextureAspect::All,
             },
             wgpu::Extent3d {
                 width: size[0] as u32,
