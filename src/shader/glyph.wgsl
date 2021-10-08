@@ -13,13 +13,15 @@ struct VertexInput {
     [[location(1)]] right_bottom: vec2<f32>;
     [[location(2)]] tex_left_top: vec2<f32>;
     [[location(3)]] tex_right_bottom: vec2<f32>;
-    [[location(4)]] color: vec4<f32>;
+    [[location(4)]] scissor: vec4<f32>;
+    [[location(5)]] color: vec4<f32>;
 };
 
 struct VertexOutput {
     [[builtin(position)]] position: vec4<f32>;
     [[location(0)]] f_tex_pos: vec2<f32>;
     [[location(1)]] f_color: vec4<f32>;
+    [[location(2)]] scissor: vec4<f32>;
 };
 
 [[stage(vertex)]]
@@ -50,9 +52,10 @@ fn vs_main(input: VertexInput) -> VertexOutput {
             out.f_tex_pos = input.tex_right_bottom;
         }
     }
-    
+
     out.f_color = input.color;
     out.position = globals.transform * vec4<f32>(pos, input.left_top.z, 1.0);
+    out.scissor = input.scissor;
 
     return out;
 }
@@ -60,6 +63,22 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 [[stage(fragment)]]
 fn fs_main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
     var alpha: f32 = textureSample(font_tex, font_sampler, input.f_tex_pos).r;
+
+    if (input.position.x < input.scissor.x) {
+        discard;
+    }
+
+    if (input.position.x > input.scissor.z && input.scissor.z > 0.0) {
+        discard;
+    }
+
+    if (input.position.y > input.scissor.w && input.scissor.w > 0.0) {
+        discard;
+    }
+
+    if (input.position.y < input.scissor.y) {
+        discard;
+    }
 
     if (alpha <= 0.0) {
         discard;
