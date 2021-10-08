@@ -31,11 +31,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             .expect("Request device")
     });
 
-    // Create staging belt and a local pool
-    let mut staging_belt = wgpu::util::StagingBelt::new(1024);
-    let mut local_pool = futures::executor::LocalPool::new();
-    let local_spawner = local_pool.spawner();
-
     // Prepare swap chain
     let render_format = wgpu::TextureFormat::Bgra8UnormSrgb;
     let mut size = window.inner_size();
@@ -158,17 +153,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .expect("Draw queued");
 
                 // Submit the work!
-                staging_belt.finish();
                 queue.submit(Some(encoder.finish()));
-
-                // Recall unused staging buffers
-                use futures::task::SpawnExt;
-
-                local_spawner
-                    .spawn(staging_belt.recall())
-                    .expect("Recall staging belt");
-
-                local_pool.run_until_stalled();
             }
             _ => {
                 *control_flow = winit::event_loop::ControlFlow::Wait;
