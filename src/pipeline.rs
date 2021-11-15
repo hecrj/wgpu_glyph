@@ -308,6 +308,7 @@ fn build<D>(
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleStrip,
             front_face: wgpu::FrontFace::Cw,
+            strip_index_format: Some(wgpu::IndexFormat::Uint16),
             ..Default::default()
         },
         depth_stencil,
