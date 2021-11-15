@@ -49,8 +49,9 @@ fn vs_main(input: VertexInput) -> VertexOutput {
             pos = vec2<f32>(right, bottom);
             out.f_tex_pos = input.tex_right_bottom;
         }
+        default: {}
     }
-    
+
     out.f_color = input.color;
     out.position = globals.transform * vec4<f32>(pos, input.left_top.z, 1.0);
 
