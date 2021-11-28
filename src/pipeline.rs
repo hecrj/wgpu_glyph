@@ -161,7 +161,8 @@ impl<Depth> Pipeline<Depth> {
                 label: Some("wgpu_glyph::Pipeline instances"),
                 size: mem::size_of::<Instance>() as u64
                     * instances.len() as u64,
-                usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
+                usage: wgpu::BufferUsages::VERTEX
+                    | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             });
 
@@ -210,7 +211,7 @@ fn build<D>(
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&IDENTITY_MATRIX),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -231,7 +232,7 @@ fn build<D>(
             entries: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStage::VERTEX,
+                    visibility: wgpu::ShaderStages::VERTEX,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -243,7 +244,7 @@ fn build<D>(
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Sampler {
                         filtering: true,
                         comparison: false,
@@ -252,10 +253,10 @@ fn build<D>(
                 },
                 wgpu::BindGroupLayoutEntry {
                     binding: 2,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
                         sample_type: wgpu::TextureSampleType::Float {
-                            filterable: false,
+                            filterable: true,
                         },
                         view_dimension: wgpu::TextureViewDimension::D2,
                         multisampled: false,
@@ -277,7 +278,7 @@ fn build<D>(
         label: Some("wgpu_glyph::Pipeline instances"),
         size: mem::size_of::<Instance>() as u64
             * Instance::INITIAL_AMOUNT as u64,
-        usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
+        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
 
@@ -293,7 +294,6 @@ fn build<D>(
         source: wgpu::ShaderSource::Wgsl(crate::Cow::Borrowed(include_str!(
             "shader/glyph.wgsl"
         ))),
-        flags: wgpu::ShaderFlags::all(),
     });
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -304,7 +304,7 @@ fn build<D>(
             entry_point: "vs_main",
             buffers: &[wgpu::VertexBufferLayout {
                 array_stride: mem::size_of::<Instance>() as u64,
-                step_mode: wgpu::InputStepMode::Instance,
+                step_mode: wgpu::VertexStepMode::Instance,
                 attributes: &wgpu::vertex_attr_array![
                     0 => Float32x3,
                     1 => Float32x2,
@@ -317,6 +317,7 @@ fn build<D>(
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleStrip,
             front_face: wgpu::FrontFace::Cw,
+            strip_index_format: Some(wgpu::IndexFormat::Uint16),
             ..Default::default()
         },
         depth_stencil,
@@ -341,7 +342,7 @@ fn build<D>(
                         operation: wgpu::BlendOperation::Add,
                     },
                 }),
-                write_mask: wgpu::ColorWrite::ALL,
+                write_mask: wgpu::ColorWrites::ALL,
             }],
         }),
     });

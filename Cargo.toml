@@ -1,6 +1,6 @@
 [package]
 name = "wgpu_glyph"
-version = "0.13.0"
+version = "0.15.1"
 authors = ["Héctor Ramón Jiménez <hector0193@gmail.com>"]
 edition = "2018"
 description = "A fast text renderer for wgpu, powered by glyph_brush"
@@ -9,9 +9,10 @@ keywords = ["font", "ttf", "truetype", "wgpu", "text"]
 repository = "https://github.com/hecrj/wgpu_glyph"
 documentation = "https://docs.rs/wgpu_glyph"
 readme = "README.md"
+resolver = "2"
 
 [dependencies]
-wgpu = "0.9"
+wgpu = "0.11"
 glyph_brush = "0.7"
 log = "0.4"
 
