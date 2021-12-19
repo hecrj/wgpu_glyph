@@ -236,10 +236,7 @@ fn build<D>(
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler {
-                        filtering: true,
-                        comparison: false,
-                    },
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                     count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
@@ -288,6 +285,7 @@ fn build<D>(
     });
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        multiview: None,
         label: None,
         layout: Some(&layout),
         vertex: wgpu::VertexState {
