@@ -12,7 +12,7 @@ readme = "README.md"
 resolver = "2"
 
 [dependencies]
-wgpu = "0.11"
+wgpu = "0.12"
 glyph_brush = "0.7"
 log = "0.4"
 
@@ -21,6 +21,6 @@ version = "1.4"
 features = ["derive"]
 
 [dev-dependencies]
-env_logger = "0.7"
-winit = "0.24"
+env_logger = "0.9"
+winit = "0.26"
 futures = "0.3"
