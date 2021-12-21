@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2021-12-20
+### Changed
+- Updated `wgpu` to `0.12`. [#83]
+
+[#83]: https://github.com/hecrj/wgpu_glyph/pull/83
+
 ## [0.15.2] - 2021-12-05
 ### Added
 - Re-export `OwnedSection` and `OwnedText` from `glyph_brush`. [#77]
@@ -176,7 +182,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release! :tada:
 
 
-[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.15.2...HEAD
+[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.16.0...HEAD
+[0.16.0]: https://github.com/hecrj/wgpu_glyph/compare/0.15.2...0.16.0
 [0.15.2]: https://github.com/hecrj/wgpu_glyph/compare/0.15.1...0.15.2
 [0.15.1]: https://github.com/hecrj/wgpu_glyph/compare/0.15.0...0.15.1
 [0.15.0]: https://github.com/hecrj/wgpu_glyph/compare/0.14.0...0.15.0
