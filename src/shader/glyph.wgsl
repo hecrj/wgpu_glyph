@@ -1,3 +1,4 @@
+[[block]]
 struct Globals {
     transform: mat4x4<f32>;
 };
