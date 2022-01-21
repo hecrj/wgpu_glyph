@@ -12,7 +12,7 @@ readme = "README.md"
 resolver = "2"
 
 [dependencies]
-wgpu = { git = "https://github.com/gfx-rs/wgpu.git", commit = "f8beffe" }
+wgpu = "0.12"
 glyph_brush = "0.7"
 log = "0.4"
 
