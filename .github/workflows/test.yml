@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        rust: [stable, beta]
+        rust: [stable]
     steps:
     - uses: actions/checkout@master
     - uses: hecrj/setup-rust-action@v1

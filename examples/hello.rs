@@ -21,6 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
+                force_fallback_adapter: false,
             })
             .await
             .expect("Request adapter");
@@ -90,7 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 // Get the next frame
                 let frame =
-                    surface.get_current_frame().expect("Get next frame").output;
+                    surface.get_current_texture().expect("Get next frame");
                 let view = &frame
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
@@ -154,6 +155,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 // Submit the work!
                 queue.submit(Some(encoder.finish()));
+                frame.present();
             }
             _ => {
                 *control_flow = winit::event_loop::ControlFlow::Wait;

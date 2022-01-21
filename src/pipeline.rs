@@ -215,10 +215,9 @@ fn build<D>(
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler {
-                        filtering: true,
-                        comparison: false,
-                    },
+                    ty: wgpu::BindingType::Sampler(
+                        wgpu::SamplerBindingType::Filtering,
+                    ),
                     count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
@@ -226,7 +225,7 @@ fn build<D>(
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
                         sample_type: wgpu::TextureSampleType::Float {
-                            filterable: false,
+                            filterable: true,
                         },
                         view_dimension: wgpu::TextureViewDimension::D2,
                         multisampled: false,
@@ -288,6 +287,7 @@ fn build<D>(
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleStrip,
             front_face: wgpu::FrontFace::Cw,
+            strip_index_format: Some(wgpu::IndexFormat::Uint16),
             ..Default::default()
         },
         depth_stencil,
@@ -312,6 +312,7 @@ fn build<D>(
                 write_mask: wgpu::ColorWrites::ALL,
             }],
         }),
+        multiview: None,
     });
 
     Pipeline {

@@ -6,11 +6,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.2] - 2021-12-05
+### Added
+- Re-export `OwnedSection` and `OwnedText` from `glyph_brush`. [#77]
+
+### Fixed
+- Added default branch to WGSL switch in shader. [#79]
+- Set `strip_index` format. [#80]
+- Set glyph texture to `filterable`. [#80]
+
+[#77]: https://github.com/hecrj/wgpu_glyph/pull/77
+[#79]: https://github.com/hecrj/wgpu_glyph/pull/79
+[#80]: https://github.com/hecrj/wgpu_glyph/pull/80
+
+## [0.15.1] - 2021-10-13
+### Removed
+- Removed installation section from the `README`.
+
+## [0.15.0] - 2021-10-13
+### Changed
+- Updated `wgpu` to `0.11`. [#75]
+
+[#75]: https://github.com/hecrj/wgpu_glyph/pull/75
+
+
+## [0.14.1] - 2021-09-19
+### Fixed
+- Fixed incorrect version in the `README`.
+
+
+## [0.14.0] - 2021-09-19
+### Changed
+- Updated `wgpu` to `0.10`. [#73]
+
+[#73]: https://github.com/hecrj/wgpu_glyph/pull/73
+
+
 ## [0.13.0] - 2021-06-22
 ### Changed
 - Updated `wgpu` to `0.9`. [#70]
 
 [#70]: https://github.com/hecrj/wgpu_glyph/pull/70
+
 
 ## [0.12.0] - 2021-05-19
 ### Changed
@@ -139,7 +176,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release! :tada:
 
 
-[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.13.0...HEAD
+[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.15.2...HEAD
+[0.15.2]: https://github.com/hecrj/wgpu_glyph/compare/0.15.1...0.15.2
+[0.15.1]: https://github.com/hecrj/wgpu_glyph/compare/0.15.0...0.15.1
+[0.15.0]: https://github.com/hecrj/wgpu_glyph/compare/0.14.0...0.15.0
+[0.14.1]: https://github.com/hecrj/wgpu_glyph/compare/0.14.0...0.14.1
+[0.14.0]: https://github.com/hecrj/wgpu_glyph/compare/0.13.0...0.14.0
 [0.13.0]: https://github.com/hecrj/wgpu_glyph/compare/0.12.0...0.13.0
 [0.12.0]: https://github.com/hecrj/wgpu_glyph/compare/0.11.0...0.12.0
 [0.11.0]: https://github.com/hecrj/wgpu_glyph/compare/0.10.0...0.11.0
