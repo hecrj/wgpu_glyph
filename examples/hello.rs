@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let surface = unsafe { instance.create_surface(&window) };
 
     // Initialize GPU
-    let (device, mut queue) = futures::executor::block_on(async {
+    let (device, queue) = futures::executor::block_on(async {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -145,7 +145,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 glyph_brush
                     .draw_queued(
                         &device,
-                        &mut queue,
+                        &queue,
                         &mut encoder,
                         view,
                         size.width,

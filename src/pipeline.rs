@@ -42,7 +42,7 @@ impl Pipeline<()> {
 
     pub fn draw(
         &mut self,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
@@ -72,7 +72,7 @@ impl Pipeline<wgpu::DepthStencilState> {
 
     pub fn draw(
         &mut self,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
@@ -92,7 +92,7 @@ impl Pipeline<wgpu::DepthStencilState> {
 impl<Depth> Pipeline<Depth> {
     pub fn update_cache(
         &mut self,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         offset: [u16; 2],
         size: [u16; 2],
         data: &[u8],
@@ -120,7 +120,7 @@ impl<Depth> Pipeline<Depth> {
     pub fn upload(
         &mut self,
         device: &wgpu::Device,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         instances: &mut [Instance],
         region: Option<Region>,
     ) {
@@ -215,7 +215,9 @@ fn build<D>(
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    ty: wgpu::BindingType::Sampler(
+                        wgpu::SamplerBindingType::Filtering,
+                    ),
                     count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
@@ -330,7 +332,7 @@ fn build<D>(
 
 fn draw<D>(
     pipeline: &mut Pipeline<D>,
-    queue: &mut wgpu::Queue,
+    queue: &wgpu::Queue,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
     depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment>,

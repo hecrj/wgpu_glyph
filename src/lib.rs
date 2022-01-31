@@ -140,7 +140,7 @@ where
     fn process_queued(
         &mut self,
         device: &wgpu::Device,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         region: Option<Region>,
     ) {
         let pipeline = &mut self.pipeline;
@@ -238,7 +238,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     pub fn draw_queued(
         &mut self,
         device: &wgpu::Device,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         target_width: u32,
@@ -268,7 +268,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     pub fn draw_queued_with_transform(
         &mut self,
         device: &wgpu::Device,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
@@ -294,7 +294,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     pub fn draw_queued_with_transform_and_scissoring(
         &mut self,
         device: &wgpu::Device,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
@@ -344,7 +344,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
     pub fn draw_queued(
         &mut self,
         device: &wgpu::Device,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
@@ -376,7 +376,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
     pub fn draw_queued_with_transform(
         &mut self,
         device: &wgpu::Device,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
@@ -409,7 +409,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
     pub fn draw_queued_with_transform_and_scissoring(
         &mut self,
         device: &wgpu::Device,
-        queue: &mut wgpu::Queue,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
