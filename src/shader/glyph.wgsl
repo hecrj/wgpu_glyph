@@ -64,22 +64,6 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 fn fs_main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
     var alpha: f32 = textureSample(font_tex, font_sampler, input.f_tex_pos).r;
 
-    if (input.position.x < input.scissor.x) {
-        discard;
-    }
-
-    if (input.position.x > input.scissor.z && input.scissor.z > 0.0) {
-        discard;
-    }
-
-    if (input.position.y > input.scissor.w && input.scissor.w > 0.0) {
-        discard;
-    }
-
-    if (input.position.y < input.scissor.y) {
-        discard;
-    }
-
     if (alpha <= 0.0) {
         discard;
     }

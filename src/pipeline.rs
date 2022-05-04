@@ -46,8 +46,9 @@ impl Pipeline<()> {
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
+        region: Option<Region>,
     ) {
-        draw(self, queue, encoder, target, None, transform);
+        draw(self, queue, encoder, target, None, transform, region);
     }
 }
 
@@ -77,6 +78,7 @@ impl Pipeline<wgpu::DepthStencilState> {
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
+        region: Option<Region>,
     ) {
         draw(
             self,
@@ -85,6 +87,7 @@ impl Pipeline<wgpu::DepthStencilState> {
             target,
             Some(depth_stencil_attachment),
             transform,
+            region,
         );
     }
 }
@@ -337,6 +340,7 @@ fn draw<D>(
     target: &wgpu::TextureView,
     depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment>,
     transform: [f32; 16],
+    region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
         queue.write_buffer(
@@ -365,6 +369,15 @@ fn draw<D>(
     render_pass.set_pipeline(&pipeline.raw);
     render_pass.set_bind_group(0, &pipeline.uniforms, &[]);
     render_pass.set_vertex_buffer(0, pipeline.instances.slice(..));
+
+    if let Some(region) = region {
+        render_pass.set_scissor_rect(
+            region.x,
+            region.y,
+            region.width,
+            region.height,
+        );
+    }
 
     render_pass.draw(0..4, 0..pipeline.current_instances as u32);
 }

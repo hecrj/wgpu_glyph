@@ -274,7 +274,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
         transform: [f32; 16],
     ) -> Result<(), String> {
         self.process_queued(device, queue, None);
-        self.pipeline.draw(queue, encoder, target, transform);
+        self.pipeline.draw(queue, encoder, target, transform, None);
 
         Ok(())
     }
@@ -301,7 +301,8 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
         region: Region,
     ) -> Result<(), String> {
         self.process_queued(device, queue, Some(region));
-        self.pipeline.draw(queue, encoder, target, transform);
+        self.pipeline
+            .draw(queue, encoder, target, transform, Some(region));
 
         Ok(())
     }
@@ -389,6 +390,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
             target,
             depth_stencil_attachment,
             transform,
+            None,
         );
 
         Ok(())
@@ -424,6 +426,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
             target,
             depth_stencil_attachment,
             transform,
+            Some(region),
         );
 
         Ok(())
