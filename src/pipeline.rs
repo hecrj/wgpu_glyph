@@ -7,6 +7,7 @@ use bytemuck::{Pod, Zeroable};
 use glyph_brush::ab_glyph::{point, Rect};
 use std::marker::PhantomData;
 use std::mem;
+use wgpu::util::DeviceExt;
 
 pub struct Pipeline<Depth> {
     transform: wgpu::Buffer,
@@ -46,8 +47,9 @@ impl Pipeline<()> {
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
+        region: Option<Region>,
     ) {
-        draw(self, queue, encoder, target, None, transform);
+        draw(self, queue, encoder, target, None, transform, region);
     }
 }
 
@@ -77,6 +79,7 @@ impl Pipeline<wgpu::DepthStencilState> {
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
+        region: Option<Region>,
     ) {
         draw(
             self,
@@ -85,6 +88,7 @@ impl Pipeline<wgpu::DepthStencilState> {
             target,
             Some(depth_stencil_attachment),
             transform,
+            region,
         );
     }
 }
@@ -120,19 +124,12 @@ impl<Depth> Pipeline<Depth> {
     pub fn upload(
         &mut self,
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
         instances: &mut [Instance],
-        region: Option<Region>,
     ) {
         if instances.is_empty() {
             self.current_instances = 0;
             return;
-        }
-
-        if let Some(region) = region {
-            for instance in instances.iter_mut() {
-                instance.scissor = region.to_f32_array();
-            }
         }
 
         if instances.len() > self.supported_instances {
@@ -151,7 +148,22 @@ impl<Depth> Pipeline<Depth> {
         let instances_bytes = bytemuck::cast_slice(instances);
 
         if !instances_bytes.is_empty() {
-            queue.write_buffer(&self.instances, 0, instances_bytes);
+            let instances_buffer =
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("wgpu_glyph::Pipeline instances"),
+                    contents: instances_bytes,
+                    usage: wgpu::BufferUsages::VERTEX
+                        | wgpu::BufferUsages::COPY_SRC,
+                });
+
+            encoder.copy_buffer_to_buffer(
+                &instances_buffer,
+                0,
+                &self.instances,
+                0,
+                mem::size_of::<Instance>() as u64 * instances.len() as u64,
+            );
+            // queue.write_buffer(&self.instances, 0, instances_bytes);
         }
 
         self.current_instances = instances.len();
@@ -175,8 +187,6 @@ fn build<D>(
     cache_width: u32,
     cache_height: u32,
 ) -> Pipeline<D> {
-    use wgpu::util::DeviceExt;
-
     let transform =
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -280,7 +290,6 @@ fn build<D>(
                     2 => Float32x2,
                     3 => Float32x2,
                     4 => Float32x4,
-                    5 => Float32x4,
                 ],
             }],
         },
@@ -337,6 +346,7 @@ fn draw<D>(
     target: &wgpu::TextureView,
     depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment>,
     transform: [f32; 16],
+    region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
         queue.write_buffer(
@@ -365,6 +375,15 @@ fn draw<D>(
     render_pass.set_pipeline(&pipeline.raw);
     render_pass.set_bind_group(0, &pipeline.uniforms, &[]);
     render_pass.set_vertex_buffer(0, pipeline.instances.slice(..));
+
+    if let Some(region) = region {
+        render_pass.set_scissor_rect(
+            region.x,
+            region.y,
+            region.width,
+            region.height,
+        );
+    }
 
     render_pass.draw(0..4, 0..pipeline.current_instances as u32);
 }
@@ -407,7 +426,6 @@ pub struct Instance {
     right_bottom: [f32; 2],
     tex_left_top: [f32; 2],
     tex_right_bottom: [f32; 2],
-    scissor: [f32; 4],
     color: [f32; 4],
 }
 
@@ -463,7 +481,6 @@ impl Instance {
             right_bottom: [gl_rect.max.x, gl_rect.min.y],
             tex_left_top: [tex_coords.min.x, tex_coords.max.y],
             tex_right_bottom: [tex_coords.max.x, tex_coords.min.y],
-            scissor: [0.0; 4],
             color: extra.color,
         }
     }

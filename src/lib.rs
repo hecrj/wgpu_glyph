@@ -140,8 +140,8 @@ where
     fn process_queued(
         &mut self,
         device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
         queue: &wgpu::Queue,
-        region: Option<Region>,
     ) {
         let pipeline = &mut self.pipeline;
 
@@ -196,7 +196,7 @@ where
 
         match brush_action.unwrap() {
             BrushAction::Draw(mut verts) => {
-                self.pipeline.upload(device, queue, &mut verts, region);
+                self.pipeline.upload(device, encoder, &mut verts);
             }
             BrushAction::ReDraw => {}
         };
@@ -273,8 +273,8 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
         target: &wgpu::TextureView,
         transform: [f32; 16],
     ) -> Result<(), String> {
-        self.process_queued(device, queue, None);
-        self.pipeline.draw(queue, encoder, target, transform);
+        self.process_queued(device, encoder, queue);
+        self.pipeline.draw(queue, encoder, target, transform, None);
 
         Ok(())
     }
@@ -300,8 +300,9 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
         transform: [f32; 16],
         region: Region,
     ) -> Result<(), String> {
-        self.process_queued(device, queue, Some(region));
-        self.pipeline.draw(queue, encoder, target, transform);
+        self.process_queued(device, encoder, queue);
+        self.pipeline
+            .draw(queue, encoder, target, transform, Some(region));
 
         Ok(())
     }
@@ -382,13 +383,14 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
         transform: [f32; 16],
     ) -> Result<(), String> {
-        self.process_queued(device, queue, None);
+        self.process_queued(device, encoder, queue);
         self.pipeline.draw(
             queue,
             encoder,
             target,
             depth_stencil_attachment,
             transform,
+            None,
         );
 
         Ok(())
@@ -416,7 +418,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         transform: [f32; 16],
         region: Region,
     ) -> Result<(), String> {
-        self.process_queued(device, queue, Some(region));
+        self.process_queued(device, encoder, queue);
 
         self.pipeline.draw(
             queue,
@@ -424,6 +426,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
             target,
             depth_stencil_attachment,
             transform,
+            Some(region),
         );
 
         Ok(())

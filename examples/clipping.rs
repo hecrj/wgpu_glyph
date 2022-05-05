@@ -127,7 +127,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     screen_position: (30.0, 30.0),
                     bounds: (size.width as f32, size.height as f32),
                     text: vec![Text::new("Hello wgpu_glyph!")
-                        .with_color([0.0, 0.0, 0.0, 1.0])
+                        .with_color([1.0, 1.0, 1.0, 1.0])
                         .with_scale(40.0)],
                     ..Section::default()
                 });
@@ -166,9 +166,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                         ),
                         Region {
                             x: 40,
-                            y: 100,
-                            width: 300,
-                            height: 115,
+                            y: 105,
+                            width: 200,
+                            height: 15,
                         },
                     )
                     .expect("Draw queued");
