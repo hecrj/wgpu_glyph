@@ -4,10 +4,10 @@ use crate::Region;
 use cache::Cache;
 
 use bytemuck::{Pod, Zeroable};
-use core::num::NonZeroU64;
 use glyph_brush::ab_glyph::{point, Rect};
 use std::marker::PhantomData;
 use std::mem;
+use wgpu::util::DeviceExt;
 
 pub struct Pipeline<Depth> {
     transform: wgpu::Buffer,
@@ -43,23 +43,13 @@ impl Pipeline<()> {
 
     pub fn draw(
         &mut self,
-        device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         transform: [f32; 16],
         region: Option<Region>,
     ) {
-        draw(
-            self,
-            device,
-            staging_belt,
-            encoder,
-            target,
-            None,
-            transform,
-            region,
-        );
+        draw(self, queue, encoder, target, None, transform, region);
     }
 }
 
@@ -84,8 +74,7 @@ impl Pipeline<wgpu::DepthStencilState> {
 
     pub fn draw(
         &mut self,
-        device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
+        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
         depth_stencil_attachment: wgpu::RenderPassDepthStencilAttachment,
@@ -94,8 +83,7 @@ impl Pipeline<wgpu::DepthStencilState> {
     ) {
         draw(
             self,
-            device,
-            staging_belt,
+            queue,
             encoder,
             target,
             Some(depth_stencil_attachment),
@@ -108,15 +96,12 @@ impl Pipeline<wgpu::DepthStencilState> {
 impl<Depth> Pipeline<Depth> {
     pub fn update_cache(
         &mut self,
-        device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
-        encoder: &mut wgpu::CommandEncoder,
+        queue: &wgpu::Queue,
         offset: [u16; 2],
         size: [u16; 2],
         data: &[u8],
     ) {
-        self.cache
-            .update(device, staging_belt, encoder, offset, size, data);
+        self.cache.update(queue, offset, size, data);
     }
 
     pub fn increase_cache_size(
@@ -139,9 +124,8 @@ impl<Depth> Pipeline<Depth> {
     pub fn upload(
         &mut self,
         device: &wgpu::Device,
-        staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
-        instances: &[Instance],
+        instances: &mut [Instance],
     ) {
         if instances.is_empty() {
             self.current_instances = 0;
@@ -163,16 +147,23 @@ impl<Depth> Pipeline<Depth> {
 
         let instances_bytes = bytemuck::cast_slice(instances);
 
-        if let Some(size) = NonZeroU64::new(instances_bytes.len() as u64) {
-            let mut instances_view = staging_belt.write_buffer(
-                encoder,
+        if !instances_bytes.is_empty() {
+            let instances_buffer =
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("wgpu_glyph::Pipeline instances"),
+                    contents: instances_bytes,
+                    usage: wgpu::BufferUsages::VERTEX
+                        | wgpu::BufferUsages::COPY_SRC,
+                });
+
+            encoder.copy_buffer_to_buffer(
+                &instances_buffer,
+                0,
                 &self.instances,
                 0,
-                size,
-                device,
+                mem::size_of::<Instance>() as u64 * instances.len() as u64,
             );
-
-            instances_view.copy_from_slice(instances_bytes);
+            // queue.write_buffer(&self.instances, 0, instances_bytes);
         }
 
         self.current_instances = instances.len();
@@ -180,7 +171,7 @@ impl<Depth> Pipeline<Depth> {
 }
 
 // Helpers
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 const IDENTITY_MATRIX: [f32; 16] = [
     1.0, 0.0, 0.0, 0.0,
     0.0, 1.0, 0.0, 0.0,
@@ -196,8 +187,6 @@ fn build<D>(
     cache_width: u32,
     cache_height: u32,
 ) -> Pipeline<D> {
-    use wgpu::util::DeviceExt;
-
     let transform =
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -236,7 +225,9 @@ fn build<D>(
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
                     visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    ty: wgpu::BindingType::Sampler(
+                        wgpu::SamplerBindingType::Filtering,
+                    ),
                     count: None,
                 },
                 wgpu::BindGroupLayoutEntry {
@@ -350,8 +341,7 @@ fn build<D>(
 
 fn draw<D>(
     pipeline: &mut Pipeline<D>,
-    device: &wgpu::Device,
-    staging_belt: &mut wgpu::util::StagingBelt,
+    queue: &wgpu::Queue,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
     depth_stencil_attachment: Option<wgpu::RenderPassDepthStencilAttachment>,
@@ -359,15 +349,11 @@ fn draw<D>(
     region: Option<Region>,
 ) {
     if transform != pipeline.current_transform {
-        let mut transform_view = staging_belt.write_buffer(
-            encoder,
+        queue.write_buffer(
             &pipeline.transform,
             0,
-            unsafe { NonZeroU64::new_unchecked(16 * 4) },
-            device,
+            bytemuck::cast_slice(&transform),
         );
-
-        transform_view.copy_from_slice(bytemuck::cast_slice(&transform));
 
         pipeline.current_transform = transform;
     }
@@ -411,7 +397,7 @@ fn create_uniforms(
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("wgpu_glyph::Pipeline uniforms"),
-        layout: layout,
+        layout,
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,

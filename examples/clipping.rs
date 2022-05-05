@@ -32,11 +32,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             .expect("Request device")
     });
 
-    // Create staging belt and a local pool
-    let mut staging_belt = wgpu::util::StagingBelt::new(1024);
-    let mut local_pool = futures::executor::LocalPool::new();
-    let local_spawner = local_pool.spawner();
-
     // Prepare swap chain
     let render_format = wgpu::TextureFormat::Bgra8UnormSrgb;
     let mut size = window.inner_size();
@@ -132,7 +127,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     screen_position: (30.0, 30.0),
                     bounds: (size.width as f32, size.height as f32),
                     text: vec![Text::new("Hello wgpu_glyph!")
-                        .with_color([0.0, 0.0, 0.0, 1.0])
+                        .with_color([1.0, 1.0, 1.0, 1.0])
                         .with_scale(40.0)],
                     ..Section::default()
                 });
@@ -141,7 +136,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 glyph_brush
                     .draw_queued(
                         &device,
-                        &mut staging_belt,
+                        &queue,
                         &mut encoder,
                         view,
                         size.width,
@@ -152,7 +147,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 glyph_brush.queue(Section {
                     screen_position: (30.0, 90.0),
                     bounds: (size.width as f32, size.height as f32),
-                    text: vec![Text::new("Hello wgpu_glyph!")
+                    text: vec![Text::new("Hello Scissor Test!")
                         .with_color([1.0, 1.0, 1.0, 1.0])
                         .with_scale(40.0)],
                     ..Section::default()
@@ -162,7 +157,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 glyph_brush
                     .draw_queued_with_transform_and_scissoring(
                         &device,
-                        &mut staging_belt,
+                        &queue,
                         &mut encoder,
                         view,
                         wgpu_glyph::orthographic_projection(
@@ -179,17 +174,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .expect("Draw queued");
 
                 // Submit the work!
-                staging_belt.finish();
                 queue.submit(Some(encoder.finish()));
                 frame.present();
-                // Recall unused staging buffers
-                use futures::task::SpawnExt;
-
-                local_spawner
-                    .spawn(staging_belt.recall())
-                    .expect("Recall staging belt");
-
-                local_pool.run_until_stalled();
             }
             _ => {
                 *control_flow = winit::event_loop::ControlFlow::Wait;
