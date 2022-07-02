@@ -1,6 +1,6 @@
 struct Globals {
     transform: mat4x4<f32>,
-};
+}
 
 @group(0) @binding(0) var<uniform> globals: Globals;
 @group(0) @binding(1) var font_sampler: sampler;
@@ -13,13 +13,13 @@ struct VertexInput {
     @location(2) tex_left_top: vec2<f32>,
     @location(3) tex_right_bottom: vec2<f32>,
     @location(4) color: vec4<f32>,
-};
+}
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) f_tex_pos: vec2<f32>,
     @location(1) f_color: vec4<f32>,
-};
+}
 
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
