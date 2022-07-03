@@ -2,7 +2,7 @@
 name = "wgpu_glyph"
 version = "0.16.0"
 authors = ["Héctor Ramón Jiménez <hector0193@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "A fast text renderer for wgpu, powered by glyph_brush"
 license = "MIT"
 keywords = ["font", "ttf", "truetype", "wgpu", "text"]
@@ -12,12 +12,12 @@ readme = "README.md"
 resolver = "2"
 
 [dependencies]
-wgpu = "0.12"
+wgpu = "0.13"
 glyph_brush = "0.7"
 log = "0.4"
 
 [dependencies.bytemuck]
-version = "1.4"
+version = "1.9"
 features = ["derive"]
 
 [dev-dependencies]

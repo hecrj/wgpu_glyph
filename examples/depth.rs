@@ -34,10 +34,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             .expect("Request device")
     });
 
-    // Create staging belt and a local pool
+    // Create staging belt
     let mut staging_belt = wgpu::util::StagingBelt::new(1024);
-    let mut local_pool = futures::executor::LocalPool::new();
-    let local_spawner = local_pool.spawner();
 
     // Prepare swap chain and depth buffer
     let mut size = window.inner_size();
@@ -101,7 +99,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let _ = encoder.begin_render_pass(
                         &wgpu::RenderPassDescriptor {
                             label: Some("Render pass"),
-                            color_attachments: &[
+                            color_attachments: &[Some(
                                 wgpu::RenderPassColorAttachment {
                                     view,
                                     resolve_target: None,
@@ -117,7 +115,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                         store: true,
                                     },
                                 },
-                            ],
+                            )],
                             depth_stencil_attachment: None,
                         },
                     );
@@ -180,13 +178,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 queue.submit(Some(encoder.finish()));
                 frame.present();
                 // Recall unused staging buffers
-                use futures::task::SpawnExt;
-
-                local_spawner
-                    .spawn(staging_belt.recall())
-                    .expect("Recall staging belt");
-
-                local_pool.run_until_stalled();
+                staging_belt.recall();
             }
             _ => {
                 *control_flow = winit::event_loop::ControlFlow::Wait;
@@ -209,7 +201,7 @@ fn create_frame_views(
             format: FORMAT,
             width,
             height,
-            present_mode: wgpu::PresentMode::Mailbox,
+            present_mode: wgpu::PresentMode::AutoVsync,
         },
     );
 
