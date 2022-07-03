@@ -80,7 +80,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         format: render_format,
                         width: size.width,
                         height: size.height,
-                        present_mode: wgpu::PresentMode::Mailbox,
+                        present_mode: wgpu::PresentMode::AutoVsync,
                     },
                 );
             }
