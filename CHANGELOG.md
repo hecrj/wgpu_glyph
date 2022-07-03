@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.17.0] - 2022-07-03
 ### Changed
 - Updated `wgpu` to `0.13`. [#89]
 
@@ -186,7 +188,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release! :tada:
 
 
-[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.16.0...HEAD
+[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.17.0...HEAD
+[0.17.0]: https://github.com/hecrj/wgpu_glyph/compare/0.16.0...0.17.0
 [0.16.0]: https://github.com/hecrj/wgpu_glyph/compare/0.15.2...0.16.0
 [0.15.2]: https://github.com/hecrj/wgpu_glyph/compare/0.15.1...0.15.2
 [0.15.1]: https://github.com/hecrj/wgpu_glyph/compare/0.15.0...0.15.1
