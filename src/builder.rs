@@ -10,6 +10,7 @@ use super::GlyphBrush;
 pub struct GlyphBrushBuilder<D, F, H = DefaultSectionHasher> {
     inner: glyph_brush::GlyphBrushBuilder<F, H>,
     texture_filter_method: wgpu::FilterMode,
+    multisample_state: wgpu::MultisampleState,
     depth: D,
 }
 
@@ -20,6 +21,7 @@ impl<F, H> From<glyph_brush::GlyphBrushBuilder<F, H>>
         GlyphBrushBuilder {
             inner,
             texture_filter_method: wgpu::FilterMode::Linear,
+            multisample_state: wgpu::MultisampleState::default(),
             depth: (),
         }
     }
@@ -37,6 +39,7 @@ impl GlyphBrushBuilder<(), ()> {
         GlyphBrushBuilder {
             inner: glyph_brush::GlyphBrushBuilder::using_fonts(fonts),
             texture_filter_method: wgpu::FilterMode::Linear,
+            multisample_state: wgpu::MultisampleState::default(),
             depth: (),
         }
     }
@@ -71,6 +74,15 @@ impl<F: Font, D, H: BuildHasher> GlyphBrushBuilder<D, F, H> {
         self
     }
 
+    /// Sets the multi-sampling state of the render pipeline.
+    pub fn multisample_state(
+        mut self,
+        multisample_state: wgpu::MultisampleState,
+    ) -> Self {
+        self.multisample_state = multisample_state;
+        self
+    }
+
     /// Sets the section hasher. `GlyphBrush` cannot handle absolute section
     /// hash collisions so use a good hash algorithm.
     ///
@@ -85,6 +97,7 @@ impl<F: Font, D, H: BuildHasher> GlyphBrushBuilder<D, F, H> {
         GlyphBrushBuilder {
             inner: self.inner.section_hasher(section_hasher),
             texture_filter_method: self.texture_filter_method,
+            multisample_state: self.multisample_state,
             depth: self.depth,
         }
     }
@@ -97,6 +110,7 @@ impl<F: Font, D, H: BuildHasher> GlyphBrushBuilder<D, F, H> {
         GlyphBrushBuilder {
             inner: self.inner,
             texture_filter_method: self.texture_filter_method,
+            multisample_state: self.multisample_state,
             depth: depth_stencil_state,
         }
     }
@@ -113,6 +127,7 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrushBuilder<(), F, H> {
         GlyphBrush::<(), F, H>::new(
             device,
             self.texture_filter_method,
+            self.multisample_state,
             render_format,
             self.inner,
         )
@@ -132,6 +147,7 @@ impl<F: Font + Sync, H: BuildHasher>
         GlyphBrush::<wgpu::DepthStencilState, F, H>::new(
             device,
             self.texture_filter_method,
+            self.multisample_state,
             render_format,
             self.depth,
             self.inner,
