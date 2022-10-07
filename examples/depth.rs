@@ -1,4 +1,5 @@
 use std::error::Error;
+use wgpu::CompositeAlphaMode;
 use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text};
 
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
@@ -202,6 +203,7 @@ fn create_frame_views(
             width,
             height,
             present_mode: wgpu::PresentMode::AutoVsync,
+            alpha_mode: CompositeAlphaMode::Auto
         },
     );
 
