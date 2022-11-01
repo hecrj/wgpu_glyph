@@ -1,4 +1,5 @@
 use std::error::Error;
+use wgpu::CompositeAlphaMode;
 use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Region, Section, Text};
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -47,6 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::AutoVsync,
+            alpha_mode: CompositeAlphaMode::Auto
         },
     );
 
@@ -81,6 +83,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         width: size.width,
                         height: size.height,
                         present_mode: wgpu::PresentMode::AutoVsync,
+                        alpha_mode: CompositeAlphaMode::Auto
                     },
                 );
             }
