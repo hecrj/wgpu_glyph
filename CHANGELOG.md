@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Support for passing a custom `MultisampleState`. [#91]
+
+### Changed
+- Updated `wgpu` to `0.14`. [#94]
+
+[#91]: https://github.com/hecrj/wgpu_glyph/pull/91
+[#94]: https://github.com/hecrj/wgpu_glyph/pull/94
 
 ## [0.17.0] - 2022-07-03
 ### Changed
