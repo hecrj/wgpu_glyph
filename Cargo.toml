@@ -12,7 +12,7 @@ readme = "README.md"
 resolver = "2"
 
 [dependencies]
-wgpu = "0.14"
+wgpu = "0.15"
 glyph_brush = "0.7"
 log = "0.4"
 
