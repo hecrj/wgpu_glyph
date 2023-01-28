@@ -14,7 +14,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
-    let surface = unsafe { instance.create_surface(&window) }.expect("Create surface");
+    let surface =
+        unsafe { instance.create_surface(&window) }.expect("Create surface");
 
     // Initialize GPU
     let (device, queue) = futures::executor::block_on(async {
