@@ -1,6 +1,6 @@
 use std::error::Error;
 use wgpu::CompositeAlphaMode;
-use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Region, Section, Text};
+use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Region, Section, Text, TextExt};
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();

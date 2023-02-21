@@ -461,7 +461,7 @@ impl Instance {
             pixel_coords,
             bounds,
             extra,
-        }: glyph_brush::GlyphVertex,
+        }: glyph_brush::GlyphVertex<'_, crate::Extra>,
     ) -> Instance {
         let gl_bounds = bounds;
 

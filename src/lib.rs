@@ -14,18 +14,91 @@ use pipeline::{Instance, Pipeline};
 pub use builder::GlyphBrushBuilder;
 pub use glyph_brush::ab_glyph;
 pub use glyph_brush::{
-    BuiltInLineBreaker, Extra, FontId, GlyphCruncher, GlyphPositioner,
+    BuiltInLineBreaker, FontId, GlyphCruncher, GlyphPositioner,
     HorizontalAlign, Layout, LineBreak, LineBreaker, OwnedSection, OwnedText,
-    Section, SectionGeometry, SectionGlyph, SectionGlyphIter, SectionText,
-    Text, VerticalAlign,
+    SectionGeometry, SectionGlyph, SectionGlyphIter, SectionText,
+    VerticalAlign,
 };
 
 use ab_glyph::{Font, Rect};
-use core::hash::BuildHasher;
+use core::hash::{BuildHasher, Hash};
 use std::borrow::Cow;
 
 use glyph_brush::{BrushAction, BrushError, DefaultSectionHasher};
 use log::{log_enabled, warn};
+
+#[derive(Debug, Clone, Copy)]
+pub struct Extra {
+    pub extra: glyph_brush::Extra,
+    pub outline_color: glyph_brush::Color,
+}
+
+impl Hash for Extra {
+    #[inline]
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        use ordered_float::OrderedFloat;
+        self.extra.hash(state);
+        [
+            OrderedFloat::from(self.outline_color[0]),
+            OrderedFloat::from(self.outline_color[1]),
+            OrderedFloat::from(self.outline_color[2]),
+            OrderedFloat::from(self.outline_color[3]),
+        ]
+        .hash(state)
+    }
+}
+impl PartialEq for Extra {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.extra == other.extra && self.outline_color == other.outline_color
+    }
+}
+
+impl Default for Extra {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            extra: Default::default(),
+            outline_color: [0.0, 0.0, 0.0, 1.0],
+        }
+    }
+}
+pub type Section<'a> = glyph_brush::Section<'a, Extra>;
+pub type Text<'a> = glyph_brush::Text<'a, Extra>;
+
+pub trait TextExt {
+    fn with_color<C: Into<glyph_brush::Color>>(self, color: C) -> Self;
+    fn with_outline_color<C: Into<glyph_brush::Color>>(self, color: C) -> Self;
+    fn with_z<Z: Into<f32>>(self, z: Z) -> Self;
+}
+
+impl<'a> TextExt for Text<'a> {
+    #[inline]
+    fn with_color<C: Into<glyph_brush::Color>>(mut self, color: C) -> Self {
+        self.extra.extra.color = color.into();
+        self
+    }
+    #[inline]
+    fn with_outline_color<C: Into<glyph_brush::Color>>(
+        mut self,
+        color: C,
+    ) -> Self {
+        self.extra.outline_color = color.into();
+        self
+    }
+    #[inline]
+    fn with_z<Z: Into<f32>>(mut self, z: Z) -> Self {
+        self.extra.extra.z = z.into();
+        self
+    }
+}
+
+impl std::ops::Deref for Extra {
+    type Target = glyph_brush::Extra;
+    fn deref(&self) -> &Self::Target {
+        &self.extra
+    }
+}
 
 /// Object allowing glyph drawing, containing cache state. Manages glyph positioning cacheing,
 /// glyph draw caching & efficient GPU texture cache updating and re-sizing on demand.
@@ -469,7 +542,9 @@ pub fn orthographic_projection(width: u32, height: u32) -> [f32; 16] {
     ]
 }
 
-impl<D, F: Font, H: BuildHasher> GlyphCruncher<F> for GlyphBrush<D, F, H> {
+impl<D, F: Font, H: BuildHasher> GlyphCruncher<F, Extra>
+    for GlyphBrush<D, F, H>
+{
     #[inline]
     fn glyphs_custom_layout<'a, 'b, S, L>(
         &'b mut self,
