@@ -306,6 +306,7 @@ fn build<D>(
                     2 => Float32x2,
                     3 => Float32x2,
                     4 => Float32x4,
+                    5 => Float32x4,
                 ],
             }],
         },
@@ -448,6 +449,7 @@ pub struct Instance {
     tex_left_top: [f32; 2],
     tex_right_bottom: [f32; 2],
     color: [f32; 4],
+    outline_color: [f32; 4],
 }
 
 impl Instance {
@@ -503,6 +505,7 @@ impl Instance {
             tex_left_top: [tex_coords.min.x, tex_coords.max.y],
             tex_right_bottom: [tex_coords.max.x, tex_coords.min.y],
             color: extra.color,
+            outline_color: extra.outline_color,
         }
     }
 }

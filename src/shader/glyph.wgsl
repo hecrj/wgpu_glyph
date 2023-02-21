@@ -13,12 +13,14 @@ struct VertexInput {
     @location(2) tex_left_top: vec2<f32>,
     @location(3) tex_right_bottom: vec2<f32>,
     @location(4) color: vec4<f32>,
+    @location(5) outline_color: vec4<f32>,
 }
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) f_tex_pos: vec2<f32>,
     @location(1) f_color: vec4<f32>,
+    @location(2) f_outline_color: vec4<f32>,
 }
 
 @vertex
@@ -52,6 +54,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     }
 
     out.f_color = input.color;
+    out.f_outline_color = input.outline_color;
     out.position = globals.transform * vec4<f32>(pos, input.left_top.z, 1.0);
 
     return out;
@@ -61,9 +64,27 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     var alpha: f32 = textureSample(font_tex, font_sampler, input.f_tex_pos).r;
 
+    var pixel_size: vec2<f32> = (1.0 / vec2<f32>(textureDimensions(font_tex)));
+
+    var border = false;
+    for(var i = -1; i <= 1 && !border; i += 1) {
+        for(var j = -1; j <= 1 && !border; j += 1) {
+            if i == 0 && j == 0 {
+                continue;
+            }
+            if textureSample(font_tex, font_sampler, input.f_tex_pos + pixel_size*vec2<f32>(f32(i), f32(j))).r <= 0.0 {
+                border = true;
+            }
+        }
+    }
+
     if (alpha <= 0.0) {
         discard;
     }
 
-    return input.f_color * vec4<f32>(1.0, 1.0, 1.0, alpha);
+    if border {
+        return input.f_outline_color * vec4<f32>(1.0, 1.0, 1.0, alpha);
+    } else {
+        return input.f_color * vec4<f32>(1.0, 1.0, 1.0, alpha);
+    }
 }

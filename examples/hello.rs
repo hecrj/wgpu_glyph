@@ -134,6 +134,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     bounds: (size.width as f32, size.height as f32),
                     text: vec![Text::new("Hello wgpu_glyph!")
                         .with_color([0.0, 0.0, 0.0, 1.0])
+                        .with_outline_color([1.0, 1.0, 1.0, 1.0])
                         .with_scale(40.0)],
                     ..Section::default()
                 });
@@ -143,6 +144,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     bounds: (size.width as f32, size.height as f32),
                     text: vec![Text::new("Hello wgpu_glyph!")
                         .with_color([1.0, 1.0, 1.0, 1.0])
+                        .with_outline_color([0.0, 0.0, 0.0, 1.0])
                         .with_scale(40.0)],
                     ..Section::default()
                 });
