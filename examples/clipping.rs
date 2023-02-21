@@ -135,7 +135,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     text: vec![Text::new("Hello wgpu_glyph!")
                         .with_color([0.0, 0.0, 0.0, 1.0])
                         .with_scale(40.0)],
-                    ..Section::default()
+                    ..Section::new()
                 });
 
                 // Draw the text!
@@ -156,7 +156,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     text: vec![Text::new("Hello wgpu_glyph!")
                         .with_color([1.0, 1.0, 1.0, 1.0])
                         .with_scale(40.0)],
-                    ..Section::default()
+                    ..Section::new()
                 });
 
                 // Draw the text!
