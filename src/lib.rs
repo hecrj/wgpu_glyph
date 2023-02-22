@@ -99,6 +99,11 @@ impl std::ops::Deref for Extra {
         &self.extra
     }
 }
+impl std::ops::DerefMut for Extra {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.extra
+    }
+}
 
 /// Object allowing glyph drawing, containing cache state. Manages glyph positioning cacheing,
 /// glyph draw caching & efficient GPU texture cache updating and re-sizing on demand.

@@ -62,9 +62,9 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-    var alpha: f32 = textureSample(font_tex, font_sampler, input.f_tex_pos).r;
-
     var pixel_size: vec2<f32> = (1.0 / vec2<f32>(textureDimensions(font_tex)));
+
+    var alpha: f32 = textureSample(font_tex, font_sampler, input.f_tex_pos + 0.5*pixel_size).r;
 
     var border = false;
     for(var i = -1; i <= 1 && !border; i += 1) {
@@ -72,7 +72,7 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
             if i == 0 && j == 0 {
                 continue;
             }
-            if textureSample(font_tex, font_sampler, input.f_tex_pos + pixel_size*vec2<f32>(f32(i), f32(j))).r <= 0.0 {
+            if textureSample(font_tex, font_sampler, input.f_tex_pos + 0.5*pixel_size + pixel_size*vec2<f32>(f32(i), f32(j))).r <= 0.0 {
                 border = true;
             }
         }
