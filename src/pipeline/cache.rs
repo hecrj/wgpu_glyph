@@ -22,6 +22,7 @@ impl Cache {
             },
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
+            view_formats: &[wgpu::TextureFormat::R8Unorm],
             usage: wgpu::TextureUsages::COPY_DST
                 | wgpu::TextureUsages::TEXTURE_BINDING,
             mip_level_count: 1,

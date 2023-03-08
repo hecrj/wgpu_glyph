@@ -13,8 +13,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build(&event_loop)
         .unwrap();
 
-    let instance = wgpu::Instance::new(wgpu::Backends::all());
-    let surface = unsafe { instance.create_surface(&window) };
+    let instance = wgpu::Instance::new(
+        wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::all(),
+            dx12_shader_compiler: Default::default(),
+        });
+    let surface = unsafe { instance.create_surface(&window) }.unwrap();
 
     // Initialize GPU
     let (device, queue) = futures::executor::block_on(async {
@@ -45,6 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         &wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: render_format,
+            view_formats: vec![],
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::AutoVsync,
@@ -80,6 +85,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     &wgpu::SurfaceConfiguration {
                         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
                         format: render_format,
+                        view_formats: vec![],
                         width: size.width,
                         height: size.height,
                         present_mode: wgpu::PresentMode::AutoVsync,
