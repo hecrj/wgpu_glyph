@@ -15,8 +15,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build(&event_loop)
         .unwrap();
 
-    let instance = wgpu::Instance::new(wgpu::Backends::all());
-    let surface = unsafe { instance.create_surface(&window) };
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::all(),
+        ..Default::default()
+    });
+    let surface = unsafe {
+        instance
+            .create_surface(&window)
+            .expect("Failed to create surface!")
+    };
 
     // Initialize GPU
     let (device, queue) = futures::executor::block_on(async {
@@ -203,7 +210,8 @@ fn create_frame_views(
             width,
             height,
             present_mode: wgpu::PresentMode::AutoVsync,
-            alpha_mode: CompositeAlphaMode::Auto
+            alpha_mode: CompositeAlphaMode::Auto,
+            view_formats: vec![FORMAT],
         },
     );
 
@@ -219,6 +227,7 @@ fn create_frame_views(
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth32Float,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[wgpu::TextureFormat::Depth32Float],
     });
 
     depth_texture.create_view(&wgpu::TextureViewDescriptor::default())
