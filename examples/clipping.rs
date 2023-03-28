@@ -17,11 +17,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         backends: wgpu::Backends::all(),
         ..Default::default()
     });
-    let surface = unsafe {
-        instance
-            .create_surface(&window)
-            .expect("Failed to create surface!")
-    };
+    let surface = unsafe { instance.create_surface(&window)? };
 
     // Initialize GPU
     let (device, queue) = futures::executor::block_on(async {
