@@ -50,7 +50,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             height: size.height,
             present_mode: wgpu::PresentMode::AutoVsync,
             alpha_mode: CompositeAlphaMode::Auto,
-            view_formats: vec![render_format],
+            view_formats: vec![],
         },
     );
 

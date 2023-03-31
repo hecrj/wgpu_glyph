@@ -205,7 +205,7 @@ fn create_frame_views(
             height,
             present_mode: wgpu::PresentMode::AutoVsync,
             alpha_mode: CompositeAlphaMode::Auto,
-            view_formats: vec![FORMAT],
+            view_formats: vec![],
         },
     );
 
@@ -220,7 +220,7 @@ fn create_frame_views(
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth32Float,
-        view_formats: &[wgpu::TextureFormat::Depth32Float],
+        view_formats: &[],
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
     });
 
