@@ -1,6 +1,6 @@
 # wgpu_glyph
 
-[![Integration status](https://github.com/hecrj/wgpu_glyph/workflows/Integration/badge.svg)](https://github.com/hecrj/wgpu_glyph/actions)
+[![Test Status](https://img.shields.io/github/actions/workflow/status/hecrj/wgpu_glyph/test.yml?branch=master&event=push&label=test)](https://github.com/hecrj/wgpu_glyph/actions)
 [![crates.io](https://img.shields.io/crates/v/wgpu_glyph.svg)](https://crates.io/crates/wgpu_glyph)
 [![Documentation](https://docs.rs/wgpu_glyph/badge.svg)](https://docs.rs/wgpu_glyph)
 [![License](https://img.shields.io/crates/l/wgpu_glyph.svg)](https://github.com/hecrj/wgpu_glyph/blob/master/LICENSE)
