@@ -9,10 +9,9 @@ keywords = ["font", "ttf", "truetype", "wgpu", "text"]
 repository = "https://github.com/hecrj/wgpu_glyph"
 documentation = "https://docs.rs/wgpu_glyph"
 readme = "README.md"
-resolver = "2"
 
 [dependencies]
-wgpu = "0.14"
+wgpu = "0.15"
 glyph_brush = "0.7"
 log = "0.4"
 
@@ -21,6 +20,6 @@ version = "1.9"
 features = ["derive"]
 
 [dev-dependencies]
-env_logger = "0.9"
-winit = "0.27"
+env_logger = "0.10"
+winit = "0.28"
 futures = "0.3"
