@@ -1,5 +1,4 @@
 use core::num::NonZeroU64;
-use std::num::NonZeroU32;
 
 pub struct Cache {
     texture: wgpu::Texture,
