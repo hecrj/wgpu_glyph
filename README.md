@@ -6,6 +6,7 @@
 > [`glyphon`] has a better design that fits better with [`wgpu`]. Furthermore, it is built on top of [`cosmic-text`], which supports many more advanced text use cases.
 
 [`glyphon`]: https://github.com/grovesNL/glyphon
+[`wgpu`]: https://github.com/gfx-rs/wgpu
 [`cosmic-text`]: https://github.com/pop-os/cosmic-text
 
 [![Test Status](https://img.shields.io/github/actions/workflow/status/hecrj/wgpu_glyph/test.yml?branch=master&event=push&label=test)](https://github.com/hecrj/wgpu_glyph/actions)
