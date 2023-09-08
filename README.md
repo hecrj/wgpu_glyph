@@ -1,5 +1,13 @@
 # wgpu_glyph
 
+> [!WARNING]
+> This crate has been superseded by [`glyphon`].
+>
+> [`glyphon`] has a better design that fits better with [`wgpu`]. Furthermore, it is built on top of [`cosmic-text`], which supports many more advanced text use cases.
+
+[`glyphon`]: https://github.com/grovesNL/glyphon
+[`cosmic-text`]: https://github.com/pop-os/cosmic-text
+
 [![Test Status](https://img.shields.io/github/actions/workflow/status/hecrj/wgpu_glyph/test.yml?branch=master&event=push&label=test)](https://github.com/hecrj/wgpu_glyph/actions)
 [![crates.io](https://img.shields.io/crates/v/wgpu_glyph.svg)](https://crates.io/crates/wgpu_glyph)
 [![Documentation](https://docs.rs/wgpu_glyph/badge.svg)](https://docs.rs/wgpu_glyph)
