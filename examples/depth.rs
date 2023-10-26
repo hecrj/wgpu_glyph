@@ -113,11 +113,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                                                 a: 1.0,
                                             },
                                         ),
-                                        store: true,
+                                        store: wgpu::StoreOp::Store,
                                     },
                                 },
                             )],
                             depth_stencil_attachment: None,
+                            timestamp_writes: None,
+                            occlusion_query_set: None,
                         },
                     );
                 }
@@ -162,11 +164,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                             view: &depth_view,
                             depth_ops: Some(wgpu::Operations {
                                 load: wgpu::LoadOp::Clear(0.0),
-                                store: true,
+                                store: wgpu::StoreOp::Store,
                             }),
                             stencil_ops: Some(wgpu::Operations {
                                 load: wgpu::LoadOp::Clear(0),
-                                store: true,
+                                store: wgpu::StoreOp::Store,
                             }),
                         },
                         size.width,
