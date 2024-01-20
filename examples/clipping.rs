@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
-    let surface = unsafe { instance.create_surface(&window)? };
+    let surface = instance.create_surface(&window)?;
 
     // Initialize GPU
     let (device, queue) = futures::executor::block_on(async {
@@ -50,6 +50,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             present_mode: wgpu::PresentMode::AutoVsync,
             alpha_mode: CompositeAlphaMode::Auto,
             view_formats: vec![],
+            desired_maximum_frame_latency: 2,
         },
     );
 
@@ -86,6 +87,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         present_mode: wgpu::PresentMode::AutoVsync,
                         alpha_mode: CompositeAlphaMode::Auto,
                         view_formats: vec![],
+                        desired_maximum_frame_latency: 2,
                     },
                 );
             }
