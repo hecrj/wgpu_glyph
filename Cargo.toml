@@ -14,6 +14,7 @@ readme = "README.md"
 wgpu = "0.18"
 glyph_brush = "0.7"
 log = "0.4"
+ordered-float = "3"
 
 [dependencies.bytemuck]
 version = "1.9"

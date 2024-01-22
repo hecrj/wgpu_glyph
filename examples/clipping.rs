@@ -1,6 +1,6 @@
 use std::error::Error;
 use wgpu::CompositeAlphaMode;
-use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Region, Section, Text};
+use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Region, Section, Text, TextExt};
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -139,7 +139,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     text: vec![Text::new("Hello wgpu_glyph!")
                         .with_color([0.0, 0.0, 0.0, 1.0])
                         .with_scale(40.0)],
-                    ..Section::default()
+                    ..Section::new()
                 });
 
                 // Draw the text!
@@ -160,7 +160,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     text: vec![Text::new("Hello wgpu_glyph!")
                         .with_color([1.0, 1.0, 1.0, 1.0])
                         .with_scale(40.0)],
-                    ..Section::default()
+                    ..Section::new()
                 });
 
                 // Draw the text!

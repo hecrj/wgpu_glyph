@@ -1,6 +1,6 @@
 use std::error::Error;
 use wgpu::CompositeAlphaMode;
-use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text};
+use wgpu_glyph::{ab_glyph, GlyphBrushBuilder, Section, Text, TextExt};
 
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 
@@ -133,7 +133,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .with_scale(95.0)
                         .with_color([0.8, 0.8, 0.8, 1.0])
                         .with_z(0.9)],
-                    ..Section::default()
+                    ..Section::new()
                 });
 
                 // Queue background text next.
@@ -150,7 +150,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .with_scale(30.0)
                         .with_color([0.05, 0.05, 0.1, 1.0])
                         .with_z(0.2)],
-                    ..Section::default()
+                    ..Section::new()
                 });
 
                 // Draw all the text!
