@@ -8,7 +8,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     // Open window and create a surface
-    let event_loop = winit::event_loop::EventLoop::new();
+    let event_loop = winit::event_loop::EventLoop::new()?;
 
     let window = winit::window::WindowBuilder::new()
         .with_resizable(false)
@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
-    let surface = unsafe { instance.create_surface(&window)? };
+    let surface = instance.create_surface(&window)?;
 
     // Initialize GPU
     let (device, queue) = futures::executor::block_on(async {
@@ -62,19 +62,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Render loop
     window.request_redraw();
 
-    event_loop.run(move |event, _, control_flow| {
+    event_loop.run(move |event, elwt| {
         match event {
             winit::event::Event::WindowEvent {
                 event: winit::event::WindowEvent::CloseRequested,
                 ..
-            } => *control_flow = winit::event_loop::ControlFlow::Exit,
+            } => elwt.exit(),
             winit::event::Event::WindowEvent {
                 event: winit::event::WindowEvent::Resized(size),
                 ..
             } => {
                 new_size = Some(size);
             }
-            winit::event::Event::RedrawRequested { .. } => {
+            winit::event::Event::WindowEvent {
+                event: winit::event::WindowEvent::RedrawRequested,
+                ..
+            } => {
                 if let Some(new_size) = new_size.take() {
                     depth_view =
                         create_frame_views(&device, &surface, new_size);
@@ -183,11 +186,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Recall unused staging buffers
                 staging_belt.recall();
             }
-            _ => {
-                *control_flow = winit::event_loop::ControlFlow::Wait;
-            }
+            _ => {}
         }
-    })
+    }).map_err(Into::into)
 }
 
 fn create_frame_views(
@@ -207,6 +208,7 @@ fn create_frame_views(
             present_mode: wgpu::PresentMode::AutoVsync,
             alpha_mode: CompositeAlphaMode::Auto,
             view_formats: vec![],
+            desired_maximum_frame_latency: 2,
         },
     );
 
