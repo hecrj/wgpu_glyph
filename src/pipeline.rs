@@ -293,10 +293,11 @@ fn build<D>(
 
     let raw = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
+        cache: None,
         layout: Some(&layout),
         vertex: wgpu::VertexState {
             module: &shader,
-            entry_point: "vs_main",
+            entry_point: Some("vs_main"),
             buffers: &[wgpu::VertexBufferLayout {
                 array_stride: mem::size_of::<Instance>() as u64,
                 step_mode: wgpu::VertexStepMode::Instance,
@@ -308,6 +309,7 @@ fn build<D>(
                     4 => Float32x4,
                 ],
             }],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
         },
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleStrip,
@@ -319,7 +321,7 @@ fn build<D>(
         multisample,
         fragment: Some(wgpu::FragmentState {
             module: &shader,
-            entry_point: "fs_main",
+            entry_point: Some("fs_main"),
             targets: &[Some(wgpu::ColorTargetState {
                 format: render_format,
                 blend: Some(wgpu::BlendState {
@@ -336,6 +338,7 @@ fn build<D>(
                 }),
                 write_mask: wgpu::ColorWrites::ALL,
             })],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
         }),
         multiview: None,
     });
