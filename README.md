@@ -3,7 +3,7 @@
 > [!WARNING]
 > This crate has been superseded by [`glyphon`].
 >
-> [`glyphon`] has a better design that fits better with [`wgpu`]. Furthermore, it is built on top of [`cosmic-text`], which supports many more advanced text use cases.
+> [`glyphon`] has a simpler design that fits better with [`wgpu`]. Furthermore, it is built on top of [`cosmic-text`], which supports many more advanced text use cases.
 
 [`glyphon`]: https://github.com/grovesNL/glyphon
 [`wgpu`]: https://github.com/gfx-rs/wgpu
