@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build(&event_loop)
         .unwrap();
 
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
+    let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
     let surface = instance.create_surface(&window)?;
 
     // Initialize GPU
@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .expect("Request adapter");
 
         adapter
-            .request_device(&wgpu::DeviceDescriptor::default(), None)
+            .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("Request device")
     });
@@ -62,133 +62,136 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Render loop
     window.request_redraw();
 
-    event_loop.run(move |event, elwt| {
-        match event {
-            winit::event::Event::WindowEvent {
-                event: winit::event::WindowEvent::CloseRequested,
-                ..
-            } => elwt.exit(),
-            winit::event::Event::WindowEvent {
-                event: winit::event::WindowEvent::Resized(size),
-                ..
-            } => {
-                new_size = Some(size);
-            }
-            winit::event::Event::WindowEvent {
-                event: winit::event::WindowEvent::RedrawRequested,
-                ..
-            } => {
-                if let Some(new_size) = new_size.take() {
-                    depth_view =
-                        create_frame_views(&device, &surface, new_size);
-                    size = new_size;
+    event_loop
+        .run(move |event, elwt| {
+            match event {
+                winit::event::Event::WindowEvent {
+                    event: winit::event::WindowEvent::CloseRequested,
+                    ..
+                } => elwt.exit(),
+                winit::event::Event::WindowEvent {
+                    event: winit::event::WindowEvent::Resized(size),
+                    ..
+                } => {
+                    new_size = Some(size);
                 }
+                winit::event::Event::WindowEvent {
+                    event: winit::event::WindowEvent::RedrawRequested,
+                    ..
+                } => {
+                    if let Some(new_size) = new_size.take() {
+                        depth_view =
+                            create_frame_views(&device, &surface, new_size);
+                        size = new_size;
+                    }
 
-                // Get a command encoder for the current frame
-                let mut encoder = device.create_command_encoder(
-                    &wgpu::CommandEncoderDescriptor {
-                        label: Some("Redraw"),
-                    },
-                );
-
-                // Get the next frame
-                let frame =
-                    surface.get_current_texture().expect("Get next frame");
-                let view = &frame
-                    .texture
-                    .create_view(&wgpu::TextureViewDescriptor::default());
-
-                // Clear frame
-                {
-                    let _ = encoder.begin_render_pass(
-                        &wgpu::RenderPassDescriptor {
-                            label: Some("Render pass"),
-                            color_attachments: &[Some(
-                                wgpu::RenderPassColorAttachment {
-                                    view,
-                                    resolve_target: None,
-                                    ops: wgpu::Operations {
-                                        load: wgpu::LoadOp::Clear(
-                                            wgpu::Color {
-                                                r: 0.4,
-                                                g: 0.4,
-                                                b: 0.4,
-                                                a: 1.0,
-                                            },
-                                        ),
-                                        store: wgpu::StoreOp::Store,
-                                    },
-                                },
-                            )],
-                            depth_stencil_attachment: None,
-                            timestamp_writes: None,
-                            occlusion_query_set: None,
+                    // Get a command encoder for the current frame
+                    let mut encoder = device.create_command_encoder(
+                        &wgpu::CommandEncoderDescriptor {
+                            label: Some("Redraw"),
                         },
                     );
-                }
 
-                // Queue text on top, it will be drawn first.
-                // Depth buffer will make it appear on top.
-                glyph_brush.queue(Section {
-                    screen_position: (30.0, 30.0),
-                    text: vec![Text::default()
-                        .with_text("On top")
-                        .with_scale(95.0)
-                        .with_color([0.8, 0.8, 0.8, 1.0])
-                        .with_z(0.9)],
-                    ..Section::default()
-                });
+                    // Get the next frame
+                    let frame =
+                        surface.get_current_texture().expect("Get next frame");
+                    let view = &frame
+                        .texture
+                        .create_view(&wgpu::TextureViewDescriptor::default());
 
-                // Queue background text next.
-                // Without a depth buffer, this text would be rendered on top of the
-                // previous queued text.
-                glyph_brush.queue(Section {
-                    bounds: (size.width as f32, size.height as f32),
-                    text: vec![Text::default()
-                        .with_text(
-                            &include_str!("lipsum.txt")
-                                .replace("\n\n", "")
-                                .repeat(10),
+                    // Clear frame
+                    {
+                        let _ = encoder.begin_render_pass(
+                            &wgpu::RenderPassDescriptor {
+                                label: Some("Render pass"),
+                                color_attachments: &[Some(
+                                    wgpu::RenderPassColorAttachment {
+                                        view,
+                                        resolve_target: None,
+                                        ops: wgpu::Operations {
+                                            load: wgpu::LoadOp::Clear(
+                                                wgpu::Color {
+                                                    r: 0.4,
+                                                    g: 0.4,
+                                                    b: 0.4,
+                                                    a: 1.0,
+                                                },
+                                            ),
+                                            store: wgpu::StoreOp::Store,
+                                        },
+                                        depth_slice: None,
+                                    },
+                                )],
+                                depth_stencil_attachment: None,
+                                timestamp_writes: None,
+                                occlusion_query_set: None,
+                            },
+                        );
+                    }
+
+                    // Queue text on top, it will be drawn first.
+                    // Depth buffer will make it appear on top.
+                    glyph_brush.queue(Section {
+                        screen_position: (30.0, 30.0),
+                        text: vec![Text::default()
+                            .with_text("On top")
+                            .with_scale(95.0)
+                            .with_color([0.8, 0.8, 0.8, 1.0])
+                            .with_z(0.9)],
+                        ..Section::default()
+                    });
+
+                    // Queue background text next.
+                    // Without a depth buffer, this text would be rendered on top of the
+                    // previous queued text.
+                    glyph_brush.queue(Section {
+                        bounds: (size.width as f32, size.height as f32),
+                        text: vec![Text::default()
+                            .with_text(
+                                &include_str!("lipsum.txt")
+                                    .replace("\n\n", "")
+                                    .repeat(10),
+                            )
+                            .with_scale(30.0)
+                            .with_color([0.05, 0.05, 0.1, 1.0])
+                            .with_z(0.2)],
+                        ..Section::default()
+                    });
+
+                    // Draw all the text!
+                    glyph_brush
+                        .draw_queued(
+                            &device,
+                            &mut staging_belt,
+                            &mut encoder,
+                            view,
+                            wgpu::RenderPassDepthStencilAttachment {
+                                view: &depth_view,
+                                depth_ops: Some(wgpu::Operations {
+                                    load: wgpu::LoadOp::Clear(0.0),
+                                    store: wgpu::StoreOp::Store,
+                                }),
+                                stencil_ops: Some(wgpu::Operations {
+                                    load: wgpu::LoadOp::Clear(0),
+                                    store: wgpu::StoreOp::Store,
+                                }),
+                            },
+                            size.width,
+                            size.height,
                         )
-                        .with_scale(30.0)
-                        .with_color([0.05, 0.05, 0.1, 1.0])
-                        .with_z(0.2)],
-                    ..Section::default()
-                });
+                        .expect("Draw queued");
 
-                // Draw all the text!
-                glyph_brush
-                    .draw_queued(
-                        &device,
-                        &mut staging_belt,
-                        &mut encoder,
-                        view,
-                        wgpu::RenderPassDepthStencilAttachment {
-                            view: &depth_view,
-                            depth_ops: Some(wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(0.0),
-                                store: wgpu::StoreOp::Store,
-                            }),
-                            stencil_ops: Some(wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(0),
-                                store: wgpu::StoreOp::Store,
-                            }),
-                        },
-                        size.width,
-                        size.height,
-                    )
-                    .expect("Draw queued");
-
-                // Submit the work!
-                staging_belt.finish();
-                queue.submit(Some(encoder.finish()));
-                frame.present();
-                // Recall unused staging buffers
-                staging_belt.recall();
+                    // Submit the work!
+                    staging_belt.finish();
+                    queue.submit(Some(encoder.finish()));
+                    frame.present();
+                    // Recall unused staging buffers
+                    staging_belt.recall();
+                }
+                _ => {}
             }
-            _ => {}
-        }
-    }).map_err(Into::into)
+        })
+        .map_err(Into::into)
 }
 
 fn create_frame_views(
