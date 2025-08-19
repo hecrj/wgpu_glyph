@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] - 2025-08-20
+### Changed
+- Updated `wgpu` to `26`. [#110]
+
+[#110]: https://github.com/hecrj/wgpu_glyph/pull/110
+
 ## [0.23.0] - 2024-12-10
 ### Changed
 - Updated `wgpu` to `23`. [#108]
@@ -228,7 +234,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release! :tada:
 
 
-[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.23.0...HEAD
+[Unreleased]: https://github.com/hecrj/wgpu_glyph/compare/0.26.0...HEAD
+[0.26.0]: https://github.com/hecrj/wgpu_glyph/compare/0.23.0...0.26.0
 [0.23.0]: https://github.com/hecrj/wgpu_glyph/compare/0.22.0...0.23.0
 [0.22.0]: https://github.com/hecrj/wgpu_glyph/compare/0.21.0...0.22.0
 [0.21.0]: https://github.com/hecrj/wgpu_glyph/compare/0.20.0...0.21.0
