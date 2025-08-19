@@ -5,7 +5,7 @@ use cache::Cache;
 
 use bytemuck::{Pod, Zeroable};
 use core::num::NonZeroU64;
-use glyph_brush::ab_glyph::{point, Rect};
+use glyph_brush::ab_glyph::{Rect, point};
 use std::marker::PhantomData;
 use std::mem;
 

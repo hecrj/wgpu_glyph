@@ -1,8 +1,8 @@
 use core::hash::BuildHasher;
 
+use glyph_brush::DefaultSectionHasher;
 use glyph_brush::ab_glyph::Font;
 use glyph_brush::delegate_glyph_brush_builder_fns;
-use glyph_brush::DefaultSectionHasher;
 
 use super::GlyphBrush;
 
