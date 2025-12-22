@@ -85,7 +85,6 @@ impl Cache {
             &self.upload_buffer,
             0,
             NonZeroU64::new(padded_data_size).unwrap(),
-            device,
         );
 
         for row in 0..height {

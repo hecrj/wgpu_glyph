@@ -283,7 +283,6 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     ) -> Result<(), String> {
         self.process_queued(device, staging_belt, encoder);
         self.pipeline.draw(
-            device,
             staging_belt,
             encoder,
             target,
@@ -317,7 +316,6 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<(), F, H> {
     ) -> Result<(), String> {
         self.process_queued(device, staging_belt, encoder);
         self.pipeline.draw(
-            device,
             staging_belt,
             encoder,
             target,
@@ -408,7 +406,6 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
     ) -> Result<(), String> {
         self.process_queued(device, staging_belt, encoder);
         self.pipeline.draw(
-            device,
             staging_belt,
             encoder,
             target,
@@ -445,7 +442,6 @@ impl<F: Font + Sync, H: BuildHasher> GlyphBrush<wgpu::DepthStencilState, F, H> {
         self.process_queued(device, staging_belt, encoder);
 
         self.pipeline.draw(
-            device,
             staging_belt,
             encoder,
             target,
