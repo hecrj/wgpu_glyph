@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     // Create staging belt
-    let mut staging_belt = wgpu::util::StagingBelt::new(1024);
+    let mut staging_belt = wgpu::util::StagingBelt::new(device.clone(), 1024);
 
     // Prepare swap chain and depth buffer
     let mut size = window.inner_size();
@@ -125,6 +125,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 depth_stencil_attachment: None,
                                 timestamp_writes: None,
                                 occlusion_query_set: None,
+                                multiview_mask: None,
                             },
                         );
                     }
