@@ -45,7 +45,6 @@ impl Pipeline<()> {
 
     pub fn draw(
         &mut self,
-        device: &wgpu::Device,
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
@@ -54,7 +53,6 @@ impl Pipeline<()> {
     ) {
         draw(
             self,
-            device,
             staging_belt,
             encoder,
             target,
@@ -88,7 +86,6 @@ impl Pipeline<wgpu::DepthStencilState> {
 
     pub fn draw(
         &mut self,
-        device: &wgpu::Device,
         staging_belt: &mut wgpu::util::StagingBelt,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
@@ -98,7 +95,6 @@ impl Pipeline<wgpu::DepthStencilState> {
     ) {
         draw(
             self,
-            device,
             staging_belt,
             encoder,
             target,
@@ -173,7 +169,6 @@ impl<Depth> Pipeline<Depth> {
                 &self.instances,
                 0,
                 size,
-                device,
             );
 
             instances_view.copy_from_slice(instances_bytes);
@@ -216,7 +211,7 @@ fn build<D>(
         address_mode_w: wgpu::AddressMode::ClampToEdge,
         mag_filter: filter_mode,
         min_filter: filter_mode,
-        mipmap_filter: filter_mode,
+        mipmap_filter: wgpu::MipmapFilterMode::Nearest,
         ..Default::default()
     });
 
@@ -280,7 +275,7 @@ fn build<D>(
     let layout =
         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
-            push_constant_ranges: &[],
+            immediate_size: 0,
             bind_group_layouts: &[&uniform_layout],
         });
 
@@ -340,7 +335,7 @@ fn build<D>(
             })],
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         }),
-        multiview: None,
+        multiview_mask: None,
     });
 
     Pipeline {
@@ -360,7 +355,6 @@ fn build<D>(
 
 fn draw<D>(
     pipeline: &mut Pipeline<D>,
-    device: &wgpu::Device,
     staging_belt: &mut wgpu::util::StagingBelt,
     encoder: &mut wgpu::CommandEncoder,
     target: &wgpu::TextureView,
@@ -374,7 +368,6 @@ fn draw<D>(
             &pipeline.transform,
             0,
             unsafe { NonZeroU64::new_unchecked(16 * 4) },
-            device,
         );
 
         transform_view.copy_from_slice(bytemuck::cast_slice(&transform));
@@ -397,6 +390,7 @@ fn draw<D>(
             depth_stencil_attachment,
             timestamp_writes: None,
             occlusion_query_set: None,
+            multiview_mask: None,
         });
 
     render_pass.set_pipeline(&pipeline.raw);
